@@ -1,7 +1,7 @@
 
 # Trait Importance
 # 16 July 2025
-# getting started withthe trait importance project.
+# getting started with the trait importance project.
 
 library(randomForest)
 library(ggplot2)
@@ -12,12 +12,15 @@ library(patchwork)
 library(tidyr)
 library(dplyr)
 
+################################################################################
+# IMPORTANT BEGINING THINGS. ALWAYS RUN THIS SECTION
+################################################################################
 
 # setwd ------------------------------------------------------------------------
-setwd("/Users/lauraberman/Library/CloudStorage/OneDrive-NationalUniversityofSingapore/Documents/Wisconsin/Townsend Lab/Trait importance")
+setwd("/Users/lauraberman/Library/CloudStorage/OneDrive-NationalUniversityofSingapore/Documents/Wisconsin/Townsend Lab/Trait importance/TraitImportance_GIT")
 
 # load data --------------------------------------------------------------------
-siteDetections <- readRDS("siteDetections_foliarTraits_BioCube_20250522.rds")
+siteDetections <- readRDS("data/siteDetections_foliarTraits_BioCube_20250522.rds")
 
 # name variable groupings ------------------------------------------------------
 names(siteDetections)
@@ -29,6 +32,10 @@ climVars <- colnames(siteDetections)[124:151]
 fxnVars <- colnames(siteDetections)[c(152:154, 179:182)]
 phenoVars <- colnames(siteDetections)[155:164]
 topoVars <- colnames(siteDetections)[165:178]
+
+################################################################################
+# END OF PRIMER
+################################################################################
 
 # run random forest, make some test plots --------------------------------------
 
@@ -148,12 +155,79 @@ ggplot(data = long_df, aes(x = VarianceExplained, fill = VariableGroup)) +
 long_df %>% group_by(VariableGroup) %>% summarise(mean_val = mean(VarianceExplained, na.rm = TRUE))
 
 
+
 # Presence / Absence models ----------------------------------------------------
 # accuracy seems low overall
 # going to try a binary presence/absence version
 
+# Convert species columns to binary presence/absence
+binaryDetections <- siteDetections
+binaryDetections[species] <- lapply(binaryDetections[species], function(x) {
+  factor(ifelse(x > 0, "present", "absent"), levels = c("absent", "present"))
+})
+
+# try one species
+
+selectedSpecies <- species[8]
+
+predictors <- paste(spatVars, collapse = " + ")
+rf_formula <- as.formula(paste(selectedSpecies, "~", predictors))
+model <- randomForest(rf_formula, data = binaryDetections, importance = TRUE)
+model
+accuracy <- 1 - model$err.rate[nrow(model$err.rate), "OOB"]
+accuracy
+
+# do the same chunk as above but with binary data
+
+# Initialize results dataframe with species column
+PercentVarExplained_binary <- data.frame(Species = species, stringsAsFactors = FALSE)
+
+# Define function to calculate % variance explained
+get_rf_rsq <- function(response, predictors) {
+  response_vals <- binaryDetections[[response]]
+  if (length(unique(response_vals)) < 2) return(NA) # escape for species always present or absent
+  rf_formula <- as.formula(paste(response, "~", paste(predictors, collapse = " + ")))
+  model <- randomForest(rf_formula, data = binaryDetections, importance = FALSE)
+  1 - model$err.rate[nrow(model$err.rate), "OOB"]
+}
 
 
+# First: all spatial variables
+spat_rsqs <- sapply(species, function(sp) get_rf_rsq(sp, spatVars))
+PercentVarExplained_binary$spatVars <- spat_rsqs
+
+# Then: trait variables
+trait_rsqs <- sapply(species, function(sp) get_rf_rsq(sp, traitVars))
+PercentVarExplained_binary$traitVars <- round(trait_rsqs, 2)
+
+# Anthr variables
+anthr_rsqs <- sapply(species, function(sp) get_rf_rsq(sp, anthrVars))
+PercentVarExplained_binary$anthrVars <- round(anthr_rsqs, 2)
+
+# climVars
+clim_rsqs <- sapply(species, function(sp) get_rf_rsq(sp, climVars))
+PercentVarExplained_binary$climVars <- round(clim_rsqs, 2)
+
+# fxnVars
+fxn_rsqs <- sapply(species, function(sp) get_rf_rsq(sp, fxnVars))
+PercentVarExplained_binary$fxnVars <- round(fxn_rsqs, 2)
+
+# Reshape the data to long format
+long_df <- PercentVarExplained_binary %>%
+  pivot_longer(cols = c(spatVars, traitVars, anthrVars, climVars, fxnVars), names_to = "VariableGroup", values_to = "VarianceExplained")
+
+# Plot with density and legend
+ggplot(data = long_df, aes(x = VarianceExplained, fill = VariableGroup)) +
+  geom_density(alpha = 0.4, color = NA) +
+  geom_vline(data = long_df %>% group_by(VariableGroup) %>% summarise(mean_val = mean(VarianceExplained, na.rm = TRUE)),
+             aes(xintercept = mean_val, color = VariableGroup), linetype = "dashed", size = 1) +
+  scale_fill_manual(values = c(spatVars = "#EFE4D2", traitVars = "#347433", anthrVars = "#901E3E", climVars = "#8DBCC7"), name = "Variable Group") +
+  scale_color_manual(values = c(spatVars = "#EFE4D2", traitVars = "#347433", anthrVars = "#901E3E", climVars = "#8DBCC7"), guide = "none") +
+  labs(x = "% Variance Explained", y = "Density") +
+  theme_minimal()
+
+# means
+long_df %>% group_by(VariableGroup) %>% summarise(mean_val = mean(VarianceExplained, na.rm = TRUE))
 
 
 
