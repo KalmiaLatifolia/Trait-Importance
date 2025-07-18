@@ -32,6 +32,7 @@ climVars <- colnames(siteDetections)[124:151]
 fxnVars <- colnames(siteDetections)[c(152:154, 179:182)]
 phenoVars <- colnames(siteDetections)[155:164]
 topoVars <- colnames(siteDetections)[165:178]
+notTraits <- colnames(siteDetections)[109:182]
 
 ################################################################################
 # END OF PRIMER
@@ -84,27 +85,6 @@ p3 <- ggplot() +
 
 # loop it  ---------------------------------------------------------------------
 
-# Prepare dataframe
-PercentVarExplained <- data.frame(Species = character(),
-                      spatVars = numeric(),
-                      stringsAsFactors = FALSE)
-
-# Loop over each species
-for (sp in species) {
-  rf_formula <- as.formula(paste(sp, "~", paste(spatVars, collapse = " + ")))
-  # Run random forest
-  model <- randomForest(rf_formula, data = siteDetections, importance = FALSE)
-  # Get final % variance explained
-  percent_var_explained <- model$rsq[length(model$rsq)] * 100
-  # Store result
-  PercentVarExplained <- rbind(PercentVarExplained,
-                   data.frame(Species = sp, spatVars = round(percent_var_explained, 2)))
-}
-
-
-ggplot(results, aes(x = PercentVarExplained)) +
-  geom_histogram()
-
 
 
 # Initialize results dataframe with species column
@@ -137,6 +117,19 @@ PercentVarExplained$climVars <- round(clim_rsqs, 2)
 fxn_rsqs <- sapply(species, function(sp) get_rf_rsq(sp, fxnVars))
 PercentVarExplained$fxnVars <- round(fxn_rsqs, 2)
 
+# phenoVars
+pheno_rsqs <- sapply(species, function(sp) get_rf_rsq(sp, phenoVars))
+PercentVarExplained$phenoVars <- round(pheno_rsqs, 2)
+
+# topoVars
+topo_rsqs <- sapply(species, function(sp) get_rf_rsq(sp, topoVars))
+PercentVarExplained$topoVars <- round(topo_rsqs, 2)
+
+# notTraits
+notTraits_rsqs <- sapply(species, function(sp) get_rf_rsq(sp, notTraits))
+PercentVarExplained$notTraits <- round(notTraits_rsqs, 2)
+
+
 # Reshape the data to long format
 long_df <- PercentVarExplained %>%
   pivot_longer(cols = c(spatVars, traitVars, anthrVars, climVars, fxnVars), names_to = "VariableGroup", values_to = "VarianceExplained")
@@ -154,6 +147,24 @@ ggplot(data = long_df, aes(x = VarianceExplained, fill = VariableGroup)) +
 # means
 long_df %>% group_by(VariableGroup) %>% summarise(mean_val = mean(VarianceExplained, na.rm = TRUE))
 
+# how much do traits improve the accuracy? -------------------------------------
+
+# Reshape the data to long format
+long_df <- PercentVarExplained %>%
+  pivot_longer(cols = c(spatVars, traitVars, notTraits), names_to = "VariableGroup", values_to = "VarianceExplained")
+
+# Plot with density and legend
+ggplot(data = long_df, aes(x = VarianceExplained, fill = VariableGroup)) +
+  geom_density(alpha = 0.4, color = NA) +
+  geom_vline(data = long_df %>% group_by(VariableGroup) %>% summarise(mean_val = mean(VarianceExplained, na.rm = TRUE)),
+             aes(xintercept = mean_val, color = VariableGroup), linetype = "dashed", size = 1) +
+  scale_fill_manual(values = c(spatVars = "#EFE4D2", traitVars = "#347433", notTraits = "#901E3E"), name = "Variable Group") +
+  scale_color_manual(values = c(spatVars = "#EFE4D2", traitVars = "#347433", notTraits = "#901E3E"), guide = "none") +
+  labs(x = "% Variance Explained", y = "Density") +
+  theme_minimal()
+
+# means
+long_df %>% group_by(VariableGroup) %>% summarise(mean_val = mean(VarianceExplained, na.rm = TRUE))
 
 
 # Presence / Absence models ----------------------------------------------------
@@ -183,7 +194,7 @@ accuracy
 PercentVarExplained_binary <- data.frame(Species = species, stringsAsFactors = FALSE)
 
 # Define function to calculate % variance explained
-get_rf_rsq <- function(response, predictors) {
+get_rf_acc <- function(response, predictors) {
   response_vals <- binaryDetections[[response]]
   if (length(unique(response_vals)) < 2) return(NA) # escape for species always present or absent
   rf_formula <- as.formula(paste(response, "~", paste(predictors, collapse = " + ")))
@@ -193,23 +204,23 @@ get_rf_rsq <- function(response, predictors) {
 
 
 # First: all spatial variables
-spat_rsqs <- sapply(species, function(sp) get_rf_rsq(sp, spatVars))
+spat_rsqs <- sapply(species, function(sp) get_rf_acc(sp, spatVars))
 PercentVarExplained_binary$spatVars <- spat_rsqs
 
 # Then: trait variables
-trait_rsqs <- sapply(species, function(sp) get_rf_rsq(sp, traitVars))
+trait_rsqs <- sapply(species, function(sp) get_rf_acc(sp, traitVars))
 PercentVarExplained_binary$traitVars <- round(trait_rsqs, 2)
 
 # Anthr variables
-anthr_rsqs <- sapply(species, function(sp) get_rf_rsq(sp, anthrVars))
+anthr_rsqs <- sapply(species, function(sp) get_rf_acc(sp, anthrVars))
 PercentVarExplained_binary$anthrVars <- round(anthr_rsqs, 2)
 
 # climVars
-clim_rsqs <- sapply(species, function(sp) get_rf_rsq(sp, climVars))
+clim_rsqs <- sapply(species, function(sp) get_rf_acc(sp, climVars))
 PercentVarExplained_binary$climVars <- round(clim_rsqs, 2)
 
 # fxnVars
-fxn_rsqs <- sapply(species, function(sp) get_rf_rsq(sp, fxnVars))
+fxn_rsqs <- sapply(species, function(sp) get_rf_acc(sp, fxnVars))
 PercentVarExplained_binary$fxnVars <- round(fxn_rsqs, 2)
 
 # Reshape the data to long format
@@ -232,6 +243,29 @@ long_df %>% group_by(VariableGroup) %>% summarise(mean_val = mean(VarianceExplai
 
 
 
+# find out which is the best predictor for each species ------------------------
+
+PercentVarExplained$bestPredictor <- apply(PercentVarExplained[, c("traitVars", "climVars", "anthrVars", "fxnVars")], 1, function(x) {
+  names(x)[which.max(x)]
+})
+
+# Count the frequency of each best predictor type
+pie_data <- PercentVarExplained %>%
+  count(bestPredictor) %>%
+  mutate(perc = n / sum(n) * 100,
+         label = paste0(bestPredictor, "\n", round(perc, 1), "%"),
+         ymax = cumsum(perc),
+         ymin = lag(ymax, default = 0),
+         label_pos = (ymin + ymax) / 2)
+
+# Create the pie chart with internal labels
+ggplot(pie_data, aes(ymax = ymax, ymin = ymin, xmax = 1, xmin = 0, fill = bestPredictor)) +
+  geom_rect() +
+  geom_text(aes(x = 0.5, y = label_pos, label = label), size = 6, color = "white") +
+  coord_polar(theta = "y") +
+  theme_void() +
+  labs(title = "Best Predictor Type per Species") +
+  scale_fill_brewer(palette = "Set1", guide = "none")
 
 
 
