@@ -14,6 +14,9 @@ library(dplyr)
 library(mgcv)
 library(VSURF)
 library(caret)
+library(doParallel)
+library(ranger)
+library(Boruta)
 
 ################################################################################
 # IMPORTANT BEGINING THINGS. ALWAYS RUN THIS SECTION
@@ -508,7 +511,7 @@ ggplot(pairs, aes(x=area, y=r2, color=category)) +
 #---------------------------
 # Step 0: Define variables
 #---------------------------
-response <- siteDetections$Yellow.rumped.Warbler
+response <- siteDetections$Oak.Titmouse
 predictors <- siteDetections[ , spatVars]
 
 #---------------------------
@@ -525,8 +528,17 @@ cat("Full RF OOB R²:", full_r2, "\n")
 #---------------------------
 # Step 2: Variable Selection with VSURF
 #---------------------------
+# Detect cores and register
+n.cores <- parallel::detectCores() - 1
+cl <- makeCluster(n.cores)
+registerDoParallel(cl)
+
 set.seed(123)
-vsurf.res <- VSURF(x = predictors, y = response)
+vsurf.res <- VSURF(x = predictors, y = response,
+                   parallel = TRUE,  # important!
+                   ncores = n.cores) # number of cores to use
+
+stopCluster(cl)
 
 # Best variables for prediction
 sel.vars <- vsurf.res$varselect.pred
@@ -555,3 +567,165 @@ cv.rf <- train(response ~ ., data = data.frame(response=response, predictors.sel
                method = "rf", trControl = ctrl, ntree = 1000)
 
 cat("Cross-validated R²:", max(cv.rf$results$Rsquared), "\n")
+
+
+#---------------------------
+# Predictions from RF models
+#---------------------------
+pred.full <- predict(rf.full, predictors)         # full model predictions
+pred.sel  <- predict(rf.sel, predictors.sel)      # reduced model predictions
+
+#---------------------------
+# Combine into one dataframe
+#---------------------------
+plot.df <- data.frame(
+  Observed = response,
+  PredFull = pred.full,
+  PredSel  = pred.sel
+)
+
+#---------------------------
+# Plot observed vs predicted (full model)
+#---------------------------
+ggplot(plot.df, aes(x = Observed, y = PredFull)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "lm", color = "red", se = FALSE) +
+  labs(title = "Observed vs Predicted (Full RF)",
+       x = "Observed Detection Rate",
+       y = "Predicted Detection Rate") +
+  theme_minimal()
+
+#---------------------------
+# Plot observed vs predicted (reduced model)
+#---------------------------
+ggplot(plot.df, aes(x = Observed, y = PredSel)) +
+  geom_point(alpha = 0.6) +
+  geom_smooth(method = "lm", color = "blue", se = FALSE) +
+  labs(title = "Observed vs Predicted (Reduced RF)",
+       x = "Observed Detection Rate",
+       y = "Predicted Detection Rate") +
+  theme_minimal()
+
+################################################################################
+
+# Parallel setup
+n.cores <- parallel::detectCores() - 1
+cl <- makeCluster(n.cores)
+registerDoParallel(cl)
+
+# Function to get pruned RF CV R² for a species + predictor set
+get_cvR2 <- function(resp, predictors) {
+  y <- siteDetections[[resp]]
+  X <- siteDetections[, predictors, drop = FALSE]
+  
+  # VSURF for variable selection (pruned set)
+  set.seed(123)
+  vsurf.res <- VSURF(x = X, y = y)
+  sel.vars <- vsurf.res$varselect.pred
+  if (length(sel.vars) == 0) return(NA)   # no selected variables
+  
+  X.sel <- X[, sel.vars, drop = FALSE]
+  
+  # caret CV with randomForest
+  set.seed(123)
+  ctrl <- trainControl(method = "cv", number = 10)
+  cv.rf <- train(y ~ ., data = data.frame(y=y, X.sel),
+                 method = "rf", trControl = ctrl, ntree = 1000)
+  
+  max(cv.rf$results$Rsquared) # predictive ceiling (CV R²)
+}
+
+# Run in parallel over species
+results <- foreach(sp = species, .combine = rbind, .packages = c("VSURF","caret","randomForest")) %dopar% {
+  r2_spat <- get_cvR2(sp, spatVars)
+  r2_notT <- get_cvR2(sp, notTraits)
+  data.frame(species = sp,
+             prunedRF_spatVars_R2 = r2_spat,
+             prunedRF_notTraits_R2 = r2_notT)
+}
+
+stopCluster(cl)
+
+# Final results dataframe
+results <- as.data.frame(results)
+
+# started 11:12 am
+# still running 02:09
+# finished 02:11
+
+# wow that took a while. save it now D:
+
+write.csv(results, "randomForest_VSURFpruned_traitsVnoTraits_R2_allSpecies_20250826.csv")
+
+# plot R2 with vs R2 without traits
+
+ggplot(results, aes(x=prunedRF_notTraits_R2, y=prunedRF_spatVars_R2)) +
+  geom_point() +
+  geom_smooth() +
+  geom_abline(slope=1, intercept = 0) +
+  xlab("Best possible R2 without traits") +
+  ylab("Best possible R2 with traits") +
+  theme_minimal()
+
+################################################################################
+################################################################################
+################################################################################
+
+# ok that was super slow and didn't give the results I was looking for
+# well. it ran successfully. but I'm still getting lower R2 for models with more vars. so... ???
+
+
+# Parallel setup
+n.cores <- parallel::detectCores() - 1
+cl <- makeCluster(n.cores)
+registerDoParallel(cl)
+
+# Function to get Boruta-pruned RF CV R²
+get_cvR2_boruta <- function(resp, predictors) {
+  y <- siteDetections[[resp]]
+  X <- siteDetections[, predictors, drop = FALSE]
+  df <- data.frame(y = y, X)
+  
+  # Boruta variable selection
+  set.seed(123)
+  bor <- Boruta(y ~ ., data = df, doTrace = 0)
+  sel.vars <- getSelectedAttributes(bor, withTentative = FALSE)
+  if (length(sel.vars) == 0) return(NA)  # no variables kept
+  
+  df.sel <- df[, c("y", sel.vars), drop = FALSE]
+  
+  # caret CV with ranger
+  set.seed(123)
+  ctrl <- trainControl(method = "cv", number = 10)
+  cv.rf <- train(y ~ ., data = df.sel,
+                 method = "ranger",
+                 trControl = ctrl,
+                 importance = "permutation",
+                 num.trees = 1000)
+  
+  max(cv.rf$results$Rsquared)
+}
+
+# Run in parallel over species
+results <- foreach(sp = species, .combine = rbind,
+                   .packages = c("Boruta","caret","ranger")) %dopar% {
+                     r2_spat <- get_cvR2_boruta(sp, spatVars)
+                     r2_notT <- get_cvR2_boruta(sp, notTraits)
+                     data.frame(species = sp,
+                                prunedRF_spatVars_R2 = r2_spat,
+                                prunedRF_notTraits_R2 = r2_notT)
+                   }
+
+stopCluster(cl)
+
+# Final results
+results <- as.data.frame(results)
+
+# started 2:54 pm
+# still running 3:53
+# finished 
+
+
+
+
+
