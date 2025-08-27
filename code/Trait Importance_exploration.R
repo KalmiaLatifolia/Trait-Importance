@@ -452,6 +452,10 @@ summary(model)
 model <- lm(rf_formula, data = siteDetections)
 summary(model)
 
+################################################################################
+################################################################################
+################################################################################
+
 # Create all species-variable pairs
 pairs <- expand.grid(species = species, var = spatVars, stringsAsFactors = FALSE)
 
@@ -506,18 +510,20 @@ ggplot(pairs, aes(x=area, y=r2, color=category)) +
   stat_smooth(method=lm) +
   theme_minimal()
 
-
+################################################################################
+################################################################################
+################################################################################
 
 #---------------------------
 # Step 0: Define variables
 #---------------------------
-response <- siteDetections$Oak.Titmouse
+response <- siteDetections$Woodhouse.s.Scrub.Jay
 predictors <- siteDetections[ , spatVars]
 
 #---------------------------
 # Step 1: Full Random Forest
 #---------------------------
-set.seed(123)
+set.seed(124)
 rf.full <- randomForest(x = predictors, y = response, ntree = 1000, importance = TRUE)
 print(rf.full)
 
@@ -529,16 +535,8 @@ cat("Full RF OOB R²:", full_r2, "\n")
 # Step 2: Variable Selection with VSURF
 #---------------------------
 # Detect cores and register
-n.cores <- parallel::detectCores() - 1
-cl <- makeCluster(n.cores)
-registerDoParallel(cl)
-
-set.seed(123)
-vsurf.res <- VSURF(x = predictors, y = response,
-                   parallel = TRUE,  # important!
-                   ncores = n.cores) # number of cores to use
-
-stopCluster(cl)
+set.seed(124)
+vsurf.res <- VSURF(x = predictors, y = response) 
 
 # Best variables for prediction
 sel.vars <- vsurf.res$varselect.pred
@@ -550,7 +548,7 @@ cat("Variables kept:", length(sel.vars), "\n")
 predictors.sel <- predictors[ , sel.vars, drop=FALSE]
 names(predictors.sel)
 
-set.seed(123)
+set.seed(124)
 rf.sel <- randomForest(x = predictors.sel, y = response, ntree = 1000, importance = TRUE)
 print(rf.sel)
 
@@ -560,13 +558,19 @@ cat("Reduced RF OOB R²:", sel_r2, "\n")
 #---------------------------
 # Step 4: Cross-validation with caret
 #---------------------------
-set.seed(123)
+set.seed(124)
 ctrl <- trainControl(method = "cv", number = 10)
 
 cv.rf <- train(response ~ ., data = data.frame(response=response, predictors.sel),
-               method = "rf", trControl = ctrl, ntree = 1000)
+               method = "rf",
+               trControl = ctrl,
+               tuneGrid = data.frame(mtry = floor(sqrt(ncol(predictors.sel)))),
+               ntree = 1000)
 
 cat("Cross-validated R²:", max(cv.rf$results$Rsquared), "\n")
+
+
+################################################################################
 
 
 #---------------------------
@@ -606,6 +610,8 @@ ggplot(plot.df, aes(x = Observed, y = PredSel)) +
        y = "Predicted Detection Rate") +
   theme_minimal()
 
+################################################################################
+################################################################################
 ################################################################################
 
 # Parallel setup
@@ -656,6 +662,7 @@ results <- as.data.frame(results)
 # wow that took a while. save it now D:
 
 write.csv(results, "randomForest_VSURFpruned_traitsVnoTraits_R2_allSpecies_20250826.csv")
+randomForest_VSURFpruned_traitsVnoTraits_R2_allSpecies_20250826 <- results
 
 # plot R2 with vs R2 without traits
 
@@ -722,9 +729,152 @@ stopCluster(cl)
 results <- as.data.frame(results)
 
 # started 2:54 pm
-# still running 3:53
-# finished 
+# still running 4:03
+# failed 4:07
 
+################################################################################
+################################################################################
+################################################################################
+
+# ok, so which species are worse with traits, and is it real or accidental/random?
+
+results$difference <- results$prunedRF_spatVars_R2 - results$prunedRF_notTraits_R2
+
+# Woodhouse.s.Scrub.Jay had some bad results
+# lets check and see if it is always that way
+
+# Species of interest
+resp <- "Woodhouse.s.Scrub.Jay"
+y <- siteDetections[[resp]]
+X_spat <- siteDetections[, spatVars, drop = FALSE]
+X_notT <- siteDetections[, notTraits, drop = FALSE]
+
+# Function to run VSURF + RF + caret CV once
+run_once <- function(X, y) {
+  # VSURF for variable selection
+  vsurf.res <- VSURF(x = X, y = y)
+  sel.vars <- vsurf.res$varselect.pred
+  if (length(sel.vars) == 0) return(NA)  # no variables kept
+  
+  X.sel <- X[, sel.vars, drop = FALSE]
+  
+  # caret CV Random Forest
+  ctrl <- trainControl(method = "cv", number = 10)
+  cv.rf <- train(y ~ ., data = data.frame(y=y, X.sel),
+                 method = "rf", trControl = ctrl, ntree = 1000)
+  
+  max(cv.rf$results$Rsquared)
+}
+
+# Run 10 iterations (no seed → random variation preserved)
+WoodhouseIterations <- data.frame(iteration = 1:10,
+                      prunedRF_spatVars_R2 = NA,
+                      prunedRF_notTraits_R2 = NA)
+
+for (i in 1:10) {
+  r2_spat <- run_once(X_spat, y)
+  r2_notT <- run_once(X_notT, y)
+  
+  WoodhouseIterations$prunedRF_spatVars_R2[i] <- r2_spat
+  WoodhouseIterations$prunedRF_notTraits_R2[i] <- r2_notT
+}
+
+WoodhouseIterations
+
+# started 4:44
+# iteration 1: 4:50 (6 minutes)
+# leaving the office. 6*10=60 minutes predicted run time.
+
+WoodhouseIterations_long <- WoodhouseIterations %>% pivot_longer(
+  cols = c(prunedRF_spatVars_R2, prunedRF_notTraits_R2),
+  names_to = "modelType",
+  values_to = "R2")
+
+  
+ggplot(WoodhouseIterations_long, aes(x=R2, y=modelType)) +
+  geom_boxplot() +
+  theme_minimal() +
+  ggtitle("Woodhouse's Scrub Jay")
+
+
+################################################################################
+################################################################################
+################################################################################
+
+# 27 Aug 2025
+# something was cursed about my loop code
+# I'm going to remove the carat cross validation step
+# re-creating the loop code, now more carefully
+
+# variables --------------------------------------------------------------------
+species <- colnames(siteDetections)[5:96]
+spatVars <- colnames(siteDetections)[97:182]
+notTraits <- colnames(siteDetections)[109:182]
+variableSets <- list(spatVars = spatVars, notTraits = notTraits)
+
+
+# try it once ------------------------------------------------------------------
+variableSet <- siteDetections[ , spatVars]
+selectedSpecies <- siteDetections$Acorn.Woodpecker
+
+fullRFmodel <- randomForest(x = variableSet, y = selectedSpecies, ntree = 1000, importance = TRUE)
+fullRF_R2 <- fullRFmodel$rsq[length(fullRFmodel$rsq)]
+fullRF_mse <- fullRFmodel$mse[length(fullRFmodel$mse)]
+
+VSURFvarSelection <- VSURF(x = variableSet, y = selectedSpecies) 
+
+keptVariables <- variableSet[ , VSURFvarSelection$varselect.pred, drop=FALSE]
+
+prunedRF <- randomForest(x = keptVariables, y = selectedSpecies, ntree = 1000, importance = TRUE)
+prunedRF_R2 <- prunedRF$rsq[length(prunedRF$rsq)]
+prunedRF_mse <- prunedRF$mse[length(prunedRF$mse)]
+
+data.frame(species = selectedSpecies,
+           variableSet = variableSet,
+           keptVariables = keptVariableNames,
+           prunedRF_R2 = prunedRF_R2,
+           prunedRF_mse = prunedRF_mse)
+
+
+# MAKE A FUNCTION --------------------------------------------------------------
+
+get_R2 <- function(sp, vars) {
+  # Choose variables
+  variableSet <- siteDetections[ , vars] # choose either spatVars or notTraits
+  selectedSpecies <- siteDetections[[sp]] # choose one species
+  # Run VSURF
+  VSURFvarSelection <- VSURF(x = variableSet, y = selectedSpecies) 
+  # find best variables
+  keptVariables <- variableSet[ , VSURFvarSelection$varselect.pred, drop=FALSE]
+  keptVariableNames <- names(keptVariables)
+  # Run RandomForest
+  prunedRF <- randomForest(x = keptVariables, y = selectedSpecies, ntree = 1000, importance = TRUE)
+  # Save R2 and mse
+  prunedRF_R2 <- prunedRF$rsq[length(prunedRF$rsq)]
+  prunedRF_mse <- prunedRF$mse[length(prunedRF$mse)]
+  data.frame(species = sp,
+             variableSet = vars,
+             keptVariables = keptVariableNames,
+             prunedRF_R2 = prunedRF_R2,
+             prunedRF_mse = prunedRF_mse)
+}
+
+# RUN IT IN PARALLEL -----------------------------------------------------------
+
+# smol test sets
+species <- colnames(siteDetections)[5:6]
+
+# start parallelization
+cl <- makeCluster(detectCores()-1)
+registerDoParallel(cl)
+
+allsp_pruned_R2 <- foreach(sp = species, .combine = rbind, .packages = c("VSURF","randomForest")) %:%
+  foreach(vars = variableSets, .combine = rbind) %dopar% {
+    get_R2(sp, vars)
+  }
+
+# end parallelization
+stopCluster(cl)
 
 
 
