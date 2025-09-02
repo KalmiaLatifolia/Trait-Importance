@@ -17,6 +17,8 @@ library(caret)
 library(doParallel)
 library(ranger)
 library(Boruta)
+library(stringr)
+library(forcats)
 
 ################################################################################
 # IMPORTANT BEGINING THINGS. ALWAYS RUN THIS SECTION
@@ -811,36 +813,39 @@ species <- colnames(siteDetections)[5:96]
 spatVars <- colnames(siteDetections)[97:182]
 notTraits <- colnames(siteDetections)[109:182]
 variableSets <- list(spatVars = spatVars, notTraits = notTraits)
+variableSets <- c("spatVars", "notTraits")
 
 
 # try it once ------------------------------------------------------------------
-variableSet <- siteDetections[ , spatVars]
-selectedSpecies <- siteDetections$Acorn.Woodpecker
+variableSet <- variableSets[1]
+VS <- siteDetections[c(get(variableSet))]
+selectedSpecies <- siteDetections[c("Acorn.Woodpecker")]
 
-fullRFmodel <- randomForest(x = variableSet, y = selectedSpecies, ntree = 1000, importance = TRUE)
+fullRFmodel <- randomForest(x = VS, y = selectedSpecies, ntree = 1000, importance = TRUE)
 fullRF_R2 <- fullRFmodel$rsq[length(fullRFmodel$rsq)]
 fullRF_mse <- fullRFmodel$mse[length(fullRFmodel$mse)]
 
-VSURFvarSelection <- VSURF(x = variableSet, y = selectedSpecies) 
+VSURFvarSelection <- VSURF(x = VS, y = selectedSpecies) 
 
-keptVariables <- variableSet[ , VSURFvarSelection$varselect.pred, drop=FALSE]
+keptVariables <- VS[ , VSURFvarSelection$varselect.pred, drop=FALSE]
+keptVariableNames <- names(keptVariables)
 
 prunedRF <- randomForest(x = keptVariables, y = selectedSpecies, ntree = 1000, importance = TRUE)
 prunedRF_R2 <- prunedRF$rsq[length(prunedRF$rsq)]
 prunedRF_mse <- prunedRF$mse[length(prunedRF$mse)]
 
-data.frame(species = selectedSpecies,
+test <- data.frame(species = names(selectedSpecies),
            variableSet = variableSet,
-           keptVariables = keptVariableNames,
+           keptVariables = paste(keptVariableNames, collapse = ", "),
            prunedRF_R2 = prunedRF_R2,
            prunedRF_mse = prunedRF_mse)
 
 
 # MAKE A FUNCTION --------------------------------------------------------------
 
-get_R2 <- function(sp, vars) {
+get_R2 <- function(sp, vars, varset_name) {
   # Choose variables
-  variableSet <- siteDetections[ , vars] # choose either spatVars or notTraits
+  variableSet <- siteDetections[, vars] # choose either spatVars or notTraits
   selectedSpecies <- siteDetections[[sp]] # choose one species
   # Run VSURF
   VSURFvarSelection <- VSURF(x = variableSet, y = selectedSpecies) 
@@ -853,8 +858,8 @@ get_R2 <- function(sp, vars) {
   prunedRF_R2 <- prunedRF$rsq[length(prunedRF$rsq)]
   prunedRF_mse <- prunedRF$mse[length(prunedRF$mse)]
   data.frame(species = sp,
-             variableSet = vars,
-             keptVariables = keptVariableNames,
+             variableSet = varset_name,
+             keptVariables = paste(keptVariableNames, collapse = ", "),
              prunedRF_R2 = prunedRF_R2,
              prunedRF_mse = prunedRF_mse)
 }
@@ -863,19 +868,85 @@ get_R2 <- function(sp, vars) {
 
 # smol test sets
 species <- colnames(siteDetections)[5:6]
+species <- colnames(siteDetections)[5:96]
+
+combos <- expand.grid(sp = species, varset_name = names(variableSets), stringsAsFactors = FALSE)
+combos <- expand.grid(sp = species, varset_name = names(variableSets), iteration = 1:10, stringsAsFactors = FALSE)
 
 # start parallelization
 cl <- makeCluster(detectCores()-1)
 registerDoParallel(cl)
 
-allsp_pruned_R2 <- foreach(sp = species, .combine = rbind, .packages = c("VSURF","randomForest")) %:%
-  foreach(vars = variableSets, .combine = rbind) %dopar% {
-    get_R2(sp, vars)
-  }
+
+allsp_pruned_R2 <- foreach(i = 1:nrow(combos), .combine = rbind, .packages = c("VSURF","randomForest")) %dopar% {
+  sp <- combos$sp[i]
+  varset_name <- combos$varset_name[i]
+  vars <- variableSets[[varset_name]]
+  get_R2(sp, vars, varset_name)
+}
 
 # end parallelization
 stopCluster(cl)
 
+# long loop code running 11:16 am 29 Aug 2025
+# 2 Sep 2025 this loop code worked
+# only issue, I forgot to add a column for "iterations". no big deal.
+saveRDS(allsp_pruned_R2, "allsp_pruned_R2_20250902.rds")
 
+
+# lets see what it looks like
+x <- readRDS("allsp_pruned_R2_20250902.rds")
+
+x <- x %>% mutate(traitVariables = str_count(keptVariables, paste0("\\b(", paste(traitVars, collapse = "|"), ")\\b")))
+x$Traits <- ifelse(x$traitVariables>0, "TRUE", "FALSE")
+
+AW <- subset(x, x$species=="Acorn.Woodpecker")
+AW$Traits <- ifelse(AW$traitVariables>0, "TRUE", "FALSE")
+ggplot(AW, aes(x=prunedRF_R2, fill = Traits)) +
+  geom_histogram() +
+  theme_minimal()
+
+OCW <- subset(x, x$species=="Orange.crowned.Warbler")
+ggplot(OCW, aes(x=prunedRF_mse, fill = Traits)) +
+  geom_histogram() +
+  theme_minimal()
+
+test <- x %>%
+  group_by(species, Traits) %>%
+  summarise(prunedRF_R2_mean = mean(prunedRF_R2),
+            prunedRF_mse_mean = mean(prunedRF_mse),
+            prunedRF_R2_sd = sd(prunedRF_R2)) %>%
+  ungroup()
+
+test <- test %>%
+  mutate(species = fct_reorder(species, prunedRF_R2_mean, .fun = min))
+
+ggplot(test, aes(x=prunedRF_R2_mean, y=species, colour = Traits)) +
+  geom_point() +
+  theme_minimal() +
+  geom_errorbar(aes(xmin=(prunedRF_R2_mean - prunedRF_R2_sd), xmax=(prunedRF_R2_mean + prunedRF_R2_sd)))
+
+
+test <- test %>%
+  select(-prunedRF_mse_mean, -prunedRF_R2_sd) %>%
+  pivot_wider(
+    names_from = Traits,
+    values_from = c(prunedRF_R2_mean),
+    names_sep = "_"
+  )
+
+test$difference <- test$`TRUE` - test$`FALSE`
+mean(test$difference, na.rm = TRUE)
+
+# how often does each variable appear?
+
+counts <- x %>%
+  subset(variableSet=="spatVars") %>%
+  # split comma-separated values into long format
+  separate_rows(keptVariables, sep = ",\\s*") %>%
+  # count occurrences
+  count(keptVariables, sort = TRUE)
+
+counts
 
 
