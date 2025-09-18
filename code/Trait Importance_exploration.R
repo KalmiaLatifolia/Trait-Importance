@@ -19,6 +19,11 @@ library(ranger)
 library(Boruta)
 library(stringr)
 library(forcats)
+library(yacca)
+library(eulerr)
+library(purrr)
+
+
 
 ################################################################################
 # IMPORTANT BEGINING THINGS. ALWAYS RUN THIS SECTION
@@ -948,5 +953,344 @@ counts <- x %>%
   count(keptVariables, sort = TRUE)
 
 counts
+sum(counts$n)
 
 
+counts <- x %>%
+  # split comma-separated values into long format
+  separate_rows(keptVariables, sep = ",\\s*") %>%
+  # count occurrences
+  count(keptVariables, sort = TRUE)
+
+counts
+sum(counts$n)
+
+nrow(subset(x, x$variableSet=="spatVars"))
+
+length(spatVars)
+
+# I have 920 models that could include traits
+# collectively those models have 4953 variables
+# on average, that is ~5 variables per model
+# I have 86 spatial variables
+# 4953/86 = 57.59
+# If variables were selected randomly, each var should appear ~58 times
+
+
+NicheAreas <- readRDS("data/speciesNicheAreas_20250624.rds")
+
+# any relationship between niche area and trait usefullness?
+
+speciesImprovement <- merge(test, NicheAreas)
+speciesImprovement$difference[is.na(speciesImprovement$difference)] <- 0
+
+ggplot(speciesImprovement, aes(x=difference, y=area)) +
+  geom_point() +
+  geom_smooth() +
+  theme_minimal()
+
+ggplot(speciesImprovement, aes(y=difference, x=area)) +
+  geom_point() +
+  geom_smooth() +
+  theme_minimal()
+
+# what about habitat preference?
+
+speciesPolygons <-  readRDS("data/speciesPolygons_jittered_detPerDay_20250624.rds")
+speciesCentroids <- st_centroid(speciesPolygons)
+spPC <- as.data.frame(st_coordinates(speciesCentroids))
+speciesCentroids <- cbind(speciesCentroids, spPC)
+
+speciesImprovement <- merge(speciesImprovement, speciesCentroids)
+
+ggplot(speciesImprovement, aes(y=difference, x=X)) +
+  geom_point() +
+  geom_smooth() +
+  theme_minimal()
+
+ggplot(speciesImprovement, aes(x=difference, y=`FALSE`)) +
+  geom_point() +
+  geom_smooth() +
+  theme_minimal()
+
+
+################################################################################
+################################################################################
+################################################################################
+
+# 5 Sep 2025
+# ok now I want to compare models made with only traits to models made with only climate
+# I'll reuse my previous successful code, but this time use different variable sets.
+
+
+# variables --------------------------------------------------------------------
+species <- colnames(siteDetections)[5:96]
+spatVars <- colnames(siteDetections)[97:182]
+notTraits <- colnames(siteDetections)[109:182]
+traitVars <- colnames(siteDetections)[97:108]
+anthrVars <- colnames(siteDetections)[109:123]
+climVars <- colnames(siteDetections)[124:151]
+fxnVars <- colnames(siteDetections)[c(152:154, 179:182)]
+phenoVars <- colnames(siteDetections)[155:164]
+topoVars <- colnames(siteDetections)[165:178]
+variableSets <- list(traitVars = traitVars, 
+                     climVars = climVars,
+                     fxnVars = fxnVars,
+                     phenoVars = phenoVars,
+                     topoVars = topoVars,
+                     anthrVars = anthrVars)
+
+
+# MAKE A FUNCTION --------------------------------------------------------------
+
+get_R2 <- function(sp, vars, varset_name, iteration) {
+  # Choose variables
+  variableSet <- siteDetections[, vars] # choose either spatVars or notTraits
+  selectedSpecies <- siteDetections[[sp]] # choose one species
+  # Run VSURF
+  VSURFvarSelection <- VSURF(x = variableSet, y = selectedSpecies) 
+  kept_idx <- VSURFvarSelection$varselect.pred
+  
+  # If no variables were selected, return NA row
+  if (length(kept_idx) == 0) {
+    return(data.frame(species = sp,
+                      variableSet = varset_name,
+                      iteration = iteration,
+                      keptVariables = NA,
+                      prunedRF_R2 = NA,
+                      prunedRF_mse = NA))
+  }
+  
+  # Otherwise proceed with RF
+  keptVariables <- variableSet[, kept_idx, drop = FALSE]
+  keptVariableNames <- names(keptVariables)
+  # Run RandomForest
+  prunedRF <- randomForest(x = keptVariables, y = selectedSpecies, ntree = 1000, importance = TRUE)
+  # Save R2 and mse
+  prunedRF_R2 <- prunedRF$rsq[length(prunedRF$rsq)]
+  prunedRF_mse <- prunedRF$mse[length(prunedRF$mse)]
+  data.frame(species = sp,
+             variableSet = varset_name,
+             iteration = iteration,
+             keptVariables = paste(keptVariableNames, collapse = ", "),
+             prunedRF_R2 = prunedRF_R2,
+             prunedRF_mse = prunedRF_mse)
+}
+
+# RUN IT IN PARALLEL -----------------------------------------------------------
+
+# smol test sets
+#species <- colnames(siteDetections)[5:6]
+species <- colnames(siteDetections)[5:96]
+
+combos <- expand.grid(sp = species, varset_name = names(variableSets), iteration = 1:10, stringsAsFactors = FALSE)
+
+# start parallelization
+cl <- makeCluster(detectCores()-1)
+registerDoParallel(cl)
+
+
+allsp_pruned_R2_sep5 <- foreach(i = 1:nrow(combos), .combine = rbind, .packages = c("VSURF","randomForest")) %dopar% {
+  sp <- combos$sp[i]
+  varset_name <- combos$varset_name[i]
+  vars <- variableSets[[varset_name]]
+  iteration <- combos$iteration[i]
+  get_R2(sp, vars, varset_name, iteration)
+}
+
+# end parallelization
+stopCluster(cl)
+
+################################################################################
+# Mon 8 sep 2025
+# looks like my loop worked
+# lets take a look
+
+
+allsp_pruned_R2_sep5_summarized <- allsp_pruned_R2_sep5 %>%
+  group_by(species, variableSet) %>%
+  summarise(prunedRF_R2_mean = mean(prunedRF_R2, na.rm = TRUE),
+            prunedRF_R2_sd = sd(prunedRF_R2, na.rm = TRUE)) %>%
+  ungroup()
+
+allsp_pruned_R2_sep5_summarized <- allsp_pruned_R2_sep5_summarized %>%
+  mutate(species = fct_reorder(species, prunedRF_R2_mean, .fun = max, .na_rm = TRUE))
+
+ggplot(allsp_pruned_R2_sep5_summarized, aes(x=prunedRF_R2_mean, y=species, colour = variableSet)) +
+  geom_point() +
+  theme_minimal() +
+  geom_errorbar(aes(xmin=(prunedRF_R2_mean - prunedRF_R2_sd), xmax=(prunedRF_R2_mean + prunedRF_R2_sd)))
+
+
+allsp_pruned_R2_sep5_summarized <- merge(allsp_pruned_R2_sep5_summarized, NicheAreas)
+
+
+ggplot(allsp_pruned_R2_sep5_summarized, aes(x=prunedRF_R2_mean, y=area, colour = variableSet)) +
+  geom_point() +
+  theme_minimal() +
+  geom_errorbar(aes(xmin=(prunedRF_R2_mean - prunedRF_R2_sd), xmax=(prunedRF_R2_mean + prunedRF_R2_sd))) +
+  ylab("Niche Area")
+
+
+################################################################################
+
+# all species, single variable random forest
+
+species <- colnames(siteDetections)[5:96]
+
+combos <- expand.grid(sp = species, variable = spatVars, iteration = 1:10, stringsAsFactors = FALSE)
+
+get_single_R2 <- function(sp, variable, iteration) {
+  # Choose variables
+  selectedVariable <- siteDetections[variable] # choose one variable
+  selectedSpecies <- siteDetections[[sp]] # choose one species
+  # Run RandomForest
+  RF <- randomForest(x = selectedVariable, y = selectedSpecies, ntree = 1000, importance = TRUE)
+  # Save R2 and mse
+  RF_R2 <- RF$rsq[length(RF$rsq)]
+  RF_mse <- RF$mse[length(RF$mse)]
+  data.frame(species = sp,
+             variableSet = variable,
+             iteration = iteration,
+             RF_R2 = RF_R2,
+             RF_mse = RF_mse)
+}
+
+
+# start parallelization
+cl <- makeCluster(detectCores()-1)
+registerDoParallel(cl)
+
+
+allsp_singleVar_R2_sep10 <- foreach(i = 1:nrow(combos), .combine = rbind, .packages = c("randomForest")) %dopar% {
+  sp <- combos$sp[i]
+  variable <- combos$variable[i]
+  iteration <- combos$iteration[i]
+  get_single_R2(sp, variable, iteration)
+}
+
+# end parallelization
+stopCluster(cl)
+
+################################################################################
+
+# 15 Sep 2025
+# Monday
+
+# trait vars vs clim vars
+TraitVClim <- allsp_pruned_R2_sep5_summarized
+TraitVClim <- subset(TraitVClim, TraitVClim$variableSet=="climVars" | TraitVClim$variableSet=="traitVars")
+
+
+TraitVClim <- TraitVClim %>%
+  pivot_wider(
+    names_from = variableSet,
+    values_from = c(prunedRF_R2_mean, prunedRF_R2_sd),
+    names_sep = "_"
+  )
+
+rangeShift <- read.csv("data/rangeExpansion.csv")
+
+TraitVClim <- merge(TraitVClim, rangeShift)
+
+ggplot(TraitVClim, aes(x=prunedRF_R2_mean_climVars, y=prunedRF_R2_mean_traitVars, color=invasive)) +
+  geom_point() +
+  geom_errorbar(aes(xmin=(prunedRF_R2_mean_climVars - prunedRF_R2_sd_climVars), xmax=(prunedRF_R2_mean_climVars + prunedRF_R2_sd_climVars))) +
+  geom_errorbar(aes(ymin=(prunedRF_R2_mean_traitVars - prunedRF_R2_sd_traitVars), ymax=(prunedRF_R2_mean_traitVars + prunedRF_R2_sd_traitVars))) +
+  geom_abline(slope=1) +
+  ylab("R2 of best trait model") +
+  xlab("R2 of best climate model") +
+  scale_color_manual(values = c("black", "#4FB7B3")) +
+  geom_text(x=0.5, y=0, label="Climate Limited", color="black") +
+  geom_text(x=0, y=0.4, label="Habitat Limited", color="black") +
+  theme_minimal() 
+
+
+
+################################################################################
+
+# Lets try some cannonical correlation analysis
+
+
+traits <- siteDetections[, traitVars]
+climate  <- siteDetections[, climVars]
+
+cc <- cancor(traits, climate)
+cc$cor        # canonical correlations
+cc$cor^2      # shared variance per canonical dimension
+
+cc <- cca(traits, climate)
+summary(cc)
+
+qr(traits)$rank
+qr(climate)$rank
+
+################################################################################
+
+# participation ratios
+# 16 sep 2025
+
+participation_ratio <- function(pca) {
+  eig <- pca$sdev^2
+  sum(eig)^2 / sum(eig^2)
+}
+
+pca <- prcomp(siteDetections[, c(fxnVars, phenoVars)], scale. = TRUE)
+participation_ratio(pca)
+
+
+EffDim <- c(
+  "climate" = participation_ratio(prcomp(siteDetections[, climVars], scale. = TRUE)),
+  "traits" = participation_ratio(prcomp(siteDetections[, traitVars], scale. = TRUE)),
+  "climate&traits" = participation_ratio(prcomp(siteDetections[, climVars], scale. = TRUE)) +
+    participation_ratio(prcomp(siteDetections[, traitVars], scale. = TRUE)) -
+    participation_ratio(prcomp(siteDetections[, c(climVars, traitVars)], scale. = TRUE))
+)
+
+climate <- participation_ratio(prcomp(siteDetections[, climVars], scale. = TRUE))
+traits <- participation_ratio(prcomp(siteDetections[, traitVars], scale. = TRUE))
+anthro <- participation_ratio(prcomp(siteDetections[, anthrVars], scale. = TRUE))
+
+EffDim <- c(
+  "climate" = climate,
+  "traits" = traits,
+  "climate&traits" = climate + traits - participation_ratio(prcomp(siteDetections[, c(climVars, traitVars)], scale. = TRUE)),
+)
+
+EffDim <- c(
+  "climate" = climate,
+  "anthro" = anthro,
+  "climate&anthro" = climate + anthro - participation_ratio(prcomp(siteDetections[, c(climVars, anthrVars)], scale. = TRUE))
+)
+
+venn_diagram <- euler(EffDim, shape = "ellipse", input="union")
+venn_diagram
+plot(venn_diagram, quantities = TRUE)
+
+
+################################################################################
+
+# 18 sep 2025
+# lets calculate all the participation ratios and put them in a table
+
+participation_ratio <- function(pca) {
+  eig <- pca$sdev^2
+  sum(eig)^2 / sum(eig^2)
+}
+
+var_groups <- list(
+  traits = traitVars,
+  anthro = anthrVars,
+  climate = climVars,
+  fxn = fxnVars,
+  pheno = phenoVars,
+  topo = topoVars
+)
+
+pca <- prcomp(siteDetections[, climVars], scale. = TRUE)
+participation_ratio(pca)
+
+pr_df <- map_df(names(var_groups), function(g) {
+  pca <- prcomp(siteDetections[, var_groups[[g]]], scale. = TRUE)
+  tibble(group = g, participation_ratio = participation_ratio(pca))
+})
