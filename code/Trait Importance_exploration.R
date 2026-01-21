@@ -22,7 +22,7 @@ library(forcats)
 library(yacca)
 library(eulerr)
 library(purrr)
-
+library(tidyverse)
 
 
 ################################################################################
@@ -46,6 +46,11 @@ fxnVars <- colnames(siteDetections)[c(152:154, 179:182)]
 phenoVars <- colnames(siteDetections)[155:164]
 topoVars <- colnames(siteDetections)[165:178]
 notTraits <- colnames(siteDetections)[109:182]
+notAnthr <- colnames(siteDetections)[c(97:108, 124:182)]
+notClim <- colnames(siteDetections)[c(97:123, 152:182)]
+notPheno <- colnames(siteDetections)[c(97:154, 165:182)]
+notTopo <- colnames(siteDetections)[c(97:164, 179:182)]
+notFxn <- colnames(siteDetections)[c(97:151, 155:178)]
 
 ################################################################################
 # END OF PRIMER
@@ -1279,18 +1284,101 @@ participation_ratio <- function(pca) {
 }
 
 var_groups <- list(
-  traits = traitVars,
-  anthro = anthrVars,
-  climate = climVars,
-  fxn = fxnVars,
-  pheno = phenoVars,
-  topo = topoVars
+  traitVars = traitVars,
+  anthrVars = anthrVars,
+  climVars = climVars,
+  fxnVars = fxnVars,
+  phenoVars = phenoVars,
+  topoVars = topoVars,
+  spatVars = spatVars,
+  notTraits = notTraits,
+  notAnthr = notAnthr,
+  notClim = notClim,
+  notPheno = notPheno,
+  notTopo = notTopo,
+  notFxn = notFxn
 )
-
-pca <- prcomp(siteDetections[, climVars], scale. = TRUE)
-participation_ratio(pca)
 
 pr_df <- map_df(names(var_groups), function(g) {
   pca <- prcomp(siteDetections[, var_groups[[g]]], scale. = TRUE)
   tibble(group = g, participation_ratio = participation_ratio(pca))
 })
+
+n_pcs_95 <- function(pca, threshold = 0.95) {
+  var_exp <- pca$sdev^2 / sum(pca$sdev^2)
+  cum_var <- cumsum(var_exp)
+  which(cum_var >= threshold)[1]
+}
+
+results_df <- map_df(names(var_groups), function(g) {
+  pca <- prcomp(siteDetections[, var_groups[[g]]], scale. = TRUE)
+  tibble(
+    group = g,
+    n_variables = length(var_groups[[g]]),
+    participation_ratio = participation_ratio(pca),
+    n_pcs_95 = n_pcs_95(pca, 0.95)
+  )
+})
+
+################################################################################
+
+# 19 Sep 2025
+
+df_meta <- tibble(
+  group = c("traitVars", "anthrVars", "climVars",  "fxnVars",   "phenoVars", "topoVars",  "spatVars",  "notTraits", "notAnthr",  "notClim", "notPheno",  "notTopo", "notFxn"),
+  description = c("traits", "disturbance", "climate", "function", "phenology", "terrain", "All variables", "All variables except traits", "All variables except disturbance",
+                  "All variables except climate", "All variables except phenology", "All variables except terrain", "All variables except function"),
+  side = c("right","right","right","right","right","right",
+           "full", "left", "left","left","left","left","left"),
+  y = c(2,7,6,4,3,5,1,
+        2,7,6,3,5,4) 
+)
+
+data <- merge(df_meta, results_df)
+
+full_width <- 34
+data <- data %>%
+  mutate(
+    xmin = case_when(side == "left"  ~ 0,
+                     side == "right" ~ full_width - n_pcs_95,
+                     side == "full"  ~ 0),
+    xmax = case_when(side == "left"  ~ n_pcs_95,
+                     side == "right" ~ full_width,
+                     side == "full"  ~ full_width),
+    width = xmax - xmin,
+    # vertical offsets
+    y_offset = case_when(side == "left"  ~ +0.05,
+                         side == "right" ~ -0.05,
+                         TRUE ~ 0),
+    ymin = y - 0.28 + y_offset,
+    ymax = y + 0.28 + y_offset,
+    # improved label logic
+    label_x = if_else(width > 6, (xmin + xmax)/2, (xmin + xmax)/2),  # center small bars too
+    hjust_val = 0.5,
+    label_col = if_else(width > 33, "white", "black"),
+    label = paste0(description, " (", n_pcs_95, ")")
+  ) %>%
+  mutate(fill_group = case_when(
+    side == "left" ~ "left",
+    side == "full" ~ "full",
+    side == "right" ~ group  # unique by group for different colors
+  )) %>%
+  mutate(side = factor(side, levels = c("left", "right", "full"))) %>%
+  arrange(side)
+
+
+
+ggplot(data) +
+  geom_rect(aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, fill = fill_group),
+            color = NA, alpha = 0.6) +
+  geom_text(aes(x = label_x, y = y, label = label, hjust = hjust_val, color = label_col),
+            vjust = 0.5, size = 3.6, fontface = "bold") +
+  scale_x_continuous(limits = c(0, full_width), expand = c(0,0), breaks = seq(0, full_width, 5)) +
+  scale_y_continuous(breaks = NULL) +
+  scale_fill_manual(values = c(left = "grey75", full = "black", traitVars = "#E66A61", climVars = "blue", topoVars = "green", phenoVars = "orange", fxnVars = "yellow", anthrVars = "purple")) +
+  scale_color_identity() +
+  theme_minimal(base_size = 14) +
+  theme(legend.position = "none", panel.grid.major.y = element_blank()) +
+  labs(x = "Inherent Dimensionality \n (number of principal components required to explain 95% of the variation)", y = NULL)
+
+
