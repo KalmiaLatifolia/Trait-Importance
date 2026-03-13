@@ -17,8 +17,10 @@ TRYdata <- rtry_import("data/TRY_data_20251208/45681.txt")
 
 unique(TRYdata$TraitID)
 
-temp <- subset(TRYdata, TRYdata$TraitID==3106)
+# pick a trait
+temp <- subset(TRYdata, TRYdata$TraitID==44)
 
+# combine subspecies
 temp$AccSpeciesName[grepl("^Artemisia tridentata", temp$AccSpeciesName)] <- "Artemisia tridentata"
 temp$AccSpeciesName[grepl("^Pinus ponderosa", temp$AccSpeciesName)] <- "Pinus ponderosa"
 temp$AccSpeciesName[grepl("^Populus balsamifera", temp$AccSpeciesName)] <- "Populus balsamifera"
@@ -27,6 +29,7 @@ temp$AccSpeciesName[grepl("^Alnus incana", temp$AccSpeciesName)] <- "Alnus incan
 temp$AccSpeciesName[grepl("^Ceanothus cuneatus", temp$AccSpeciesName)] <- "Ceanothus cuneatus"
 temp$AccSpeciesName[grepl("^Juniperus occidentalis", temp$AccSpeciesName)] <- "Juniperus occidentalis"
 
+# select focal species
 temp <- subset(temp, temp$AccSpeciesName=="Pinus jeffreyi" |
                  temp$AccSpeciesName=="Pinus contorta" |
                  temp$AccSpeciesName=="Pinus ponderosa" |
@@ -54,6 +57,7 @@ ggplot(temp, aes(x=StdValue, y=reorder(AccSpeciesName, StdValue, FUN = mean))) +
 ggsave("TRY_CH.PDF", height=4, width=6)
 
 
+# LMA
 temp <- subset(TRYdata, TRYdata$TraitID==3117)
 temp <- subset(temp, temp$DatasetID!=431) # BAAD data
 
@@ -74,3 +78,16 @@ ggplot(temp, aes(x=LMA, y=reorder(AccSpeciesName, LMA))) +
             aes(x = 400 * 0.95, y = AccSpeciesName, label = paste0("n=", n)), 
             vjust = -0.2)
 ggsave("TRY_LMA.PDF", height=4, width=6)
+
+# Potassium
+temp <- subset(TRYdata, TRYdata$TraitID==44)
+
+ggplot(temp, aes(x=StdValue, y=reorder(AccSpeciesName, StdValue, FUN = mean))) +
+  geom_boxplot(color="#842B3B", fill="#aa384c") + 
+  xlab("Potassium") +
+  ylab("") + 
+  theme_minimal() +
+  geom_text(data = temp %>% group_by(AccSpeciesName) %>% summarise(n = n()), 
+            aes(x = 30 * 0.95, y = AccSpeciesName, label = paste0("n=", n)), 
+            vjust = -0.2) +
+  ggtitle("TRY data")
