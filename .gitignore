@@ -76,4 +76,6 @@ models/
 *.html
 *.pdf
 
+# other
+.DS_Store
 
