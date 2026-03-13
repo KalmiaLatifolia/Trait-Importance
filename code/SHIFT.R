@@ -51,10 +51,11 @@ ggplot(temp, aes(x=potassium, y=reorder(species_or_type, potassium, FUN = mean))
   theme_minimal() +
   ylab("") +
   xlab("Potassium") +
-  xlim(0,15) +
+  #xlim(0,15) +
   geom_text(data = temp %>% group_by(species_or_type) %>% summarise(n = n()), 
             aes(x = 50, y = species_or_type, label = paste0("n=", n)), 
-            vjust = 0)
+            vjust = 0) +
+  ggtitle("SHIFT data")
 ggsave("SHIFT_potassium.PDF", height=4, width=8)
 
 # phosphorus
