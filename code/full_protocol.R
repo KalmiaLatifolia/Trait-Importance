@@ -284,8 +284,8 @@ CAbiocube_files <- list.files(path_CA, full.names=TRUE)
 get_biocube <- function(file){
   r <- terra::rast(file)
   x <- terra::extract(r, sites.buffer, method="simple", exact=TRUE, na.rm=TRUE, fun=mean)
-  x <- cbind(sites.buffer, x[,2])
-  names(x)[names(x)==names(x)[ncol(x)-1]] <- basename(file)
+  x$ID <- NULL
+  x <- cbind(sites.buffer, x)
   x$geometry <- NULL
   as.data.frame(x)
 }
@@ -317,11 +317,11 @@ siteDetections_foliarTraits_BioCube <- merge(siteDetections_foliarTraits, BioCub
 
 # save -------------------------------------------------------------------------
 
-write_rds(siteDetections_foliarTraits_BioCube, "siteDetections_foliarTraits_BioCube_20250522.rds")
-write_csv(siteDetections_foliarTraits_BioCube, "siteDetections_foliarTraits_BioCube_20250522.csv")
+write_rds(siteDetections_foliarTraits_BioCube, "data/siteDetections_foliarTraits_BioCube_20260313.rds")
+write_csv(siteDetections_foliarTraits_BioCube, "data/siteDetections_foliarTraits_BioCube_20260313.csv")
 
 
-### LEFT OFF HERE - WEDNESDAY MARCH 11TH 2026 
+### LEFT OFF HERE - Friday MARCH 13TH 2026 
 
 ################################################################################
 ################################################################################
