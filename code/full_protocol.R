@@ -282,21 +282,30 @@ CAbiocube_files <- list.files(path_CA, full.names=TRUE)
 # function to extract one layer ------------------------------------------------
 
 get_biocube <- function(file){
-  r <- terra::rast(file)
-  x <- terra::extract(r, sites.buffer, method="simple", exact=TRUE, na.rm=TRUE, fun=mean)
-  x$ID <- NULL
-  x <- cbind(sites.buffer, x)
-  x$geometry <- NULL
+  r <- terra::rast(file) # load the biocube layer
+  x <- terra::extract(r, sites.buffer, method="simple", exact=TRUE, na.rm=TRUE, fun=mean) # extract from the site buffer
+  x <- cbind(sites.buffer, x) # merge them
+  x[c("ID","geometry","lat", "long")] <- NULL # remove extra rows that cause issues
   as.data.frame(x)
 }
 
 # run all extractions ----------------------------------------------------------
 
-BioCube_vars <- Reduce(function(a,b) merge(a,b), lapply(CAbiocube_files, get_biocube))
+BioCube_vars <- Reduce(function(a,b) merge(a,b, by="cell_unit"), lapply(CAbiocube_files, get_biocube)) # 578 sites, 105 vars
 
 # save it ----------------------------------------------------------------------
 
 write_rds(BioCube_vars, "data/BioCube_vars1_20260313.rds")
+
+### LEFT OFF HERE - Friday MARCH 13TH 2026 
+
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+
+
 
 # tidy variable names ----------------------------------------------------------
 
@@ -320,14 +329,6 @@ siteDetections_foliarTraits_BioCube <- merge(siteDetections_foliarTraits, BioCub
 write_rds(siteDetections_foliarTraits_BioCube, "data/siteDetections_foliarTraits_BioCube_20260313.rds")
 write_csv(siteDetections_foliarTraits_BioCube, "data/siteDetections_foliarTraits_BioCube_20260313.csv")
 
-
-### LEFT OFF HERE - Friday MARCH 13TH 2026 
-
-################################################################################
-################################################################################
-################################################################################
-################################################################################
-################################################################################
 
 
 ################################################################################
