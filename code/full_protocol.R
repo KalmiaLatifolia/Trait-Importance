@@ -19,12 +19,12 @@ setwd("/Users/lauraberman/Library/CloudStorage/OneDrive-NationalUniversityofSing
 ################################################################################
 # Table of Contents
 ################################################################################
-# 1) Load and format Bioacoustic data - 29
-# 2) remove burned areas - 140
-# 3) remove sites outside study area - 186
-# 4) Get foliar traits -209 (old, long)
-# 5) Get biocube variables - 459
-# 6) Get foliar traits -524
+# 1) Load and format Bioacoustic data - 33
+# 2) Remove burned areas - 146
+# 3) Remove sites outside study area - 188
+# 4) Get foliar traits -211
+# 5) Get biocube variables (batch 1) - 266
+# 6) 
 # 7)
 # 8)
 # 9)
@@ -70,7 +70,7 @@ effort <- vroom(files)
 
 # calculate unit effort
 unit_effort <- effort %>%
-  subset(aru_hours==7) %>%
+  subset(aru_hours==7) %>% # sampling schedule records 7 hours a day   
   group_by(cell_unit) %>%
   dplyr::summarize(startDate = min(date),
                    endDate = max(date),
@@ -79,7 +79,7 @@ unit_effort <- effort %>%
 # min(unit_effort$active_days) = 10
 # max(unit_effort$active_days) = 108
 
-write_rds(unit_effort, "unit_effort.rds")
+write_rds(unit_effort, "data/unit_effort.rds")
 
 # summarize detections by site -------------------------------------------------
 
@@ -111,6 +111,7 @@ ARUlocations <- ARUlocations %>%
   group_by(cell_unit) %>%
   dplyr::summarise(long = mean(long),
                    lat = mean(lat))
+# 901 unique cell units
 
 # add coordinates to siteDetections --------------------------------------------
 
@@ -118,7 +119,7 @@ siteDetections <- merge(siteDetections, ARUlocations)
 
 # remove rows where active days < 30 -------------------------------------------
 
-siteDetections <- subset(siteDetections, siteDetections$active_days > 30) # 59342
+siteDetections <- subset(siteDetections, siteDetections$active_days > 30) # 59,342
 
 # pivot wider ------------------------------------------------------------------
 # [I will want active_days back later]
@@ -134,6 +135,7 @@ siteDetections <- siteDetections %>%
   group_by(cell_unit) %>%
   pivot_wider(names_from = common_name,
               values_from = obs_per_day)
+# 889 sites, 104 obs
 
 # No detections (NAs) become 0s
 siteDetections[is.na(siteDetections)] <- 0
@@ -141,7 +143,7 @@ siteDetections[is.na(siteDetections)] <- 0
 
 
 ################################################################################
-# remove burned areas
+# Remove burned areas
 ################################################################################
 
 
@@ -183,7 +185,7 @@ rm(fire)
 
 
 ################################################################################
-# remove sites outside study area
+# Remove sites outside study area
 ################################################################################
 
 # get tahoe and yosemite boxes -------------------------------------------------
@@ -199,10 +201,10 @@ mapview(siteDetections) + mapview(tahoe) + mapview(yosemite)
 
 # save siteDetections ----------------------------------------------------------
 
-write_rds(siteDetections, "siteDetections_20260311.rds")
+write_rds(siteDetections, "data/siteDetections_20260311.rds")
 x <- as.data.frame(siteDetections)
 x$geometry <- NULL
-write_csv(x, "siteDetections_20260311.csv")
+write_csv(x, "data/siteDetections_20260311.csv")
 
 
 ################################################################################
@@ -237,75 +239,69 @@ foliarTraits <- Reduce(function(a,b) merge(a,b), lapply(traits, get_trait))
 
 # save foliar traits -----------------------------------------------------------
 
-write_rds(foliarTraits, "foliarTraits_20250502.rds")
+write_rds(foliarTraits, "data/foliarTraits_20260313.rds")
 x <- as.data.frame(foliarTraits)
 x$geometry <- NULL 
-write_csv(x, "foliarTraits_20250502.csv")
+write_csv(x, "data/foliarTraits_20260313.csv")
 
 # merge foliar traits with siteDetections --------------------------------------
 
 foliarTraits <- as.data.frame(foliarTraits)
 foliarTraits$geometry <- NULL 
-siteDetections_foliarTraits <- merge(siteDetections, foliarTraits)
+siteDetections_foliarTraits <- merge(siteDetections, foliarTraits) #649
 
-# subset to remove NA rows -----------------------------------------------------
+# subset to remove NA rows (no foliar trait data) ------------------------------
 
-siteDetections_foliarTraits <- siteDetections_foliarTraits[!is.na(siteDetections_foliarTraits$Nitrogen), ] #580
+siteDetections_foliarTraits <- siteDetections_foliarTraits[!is.na(siteDetections_foliarTraits$Nitrogen), ] #578
 
 # save foliar traits x siteDetections ------------------------------------------
 
-write_rds(siteDetections_foliarTraits, "siteDetections_foliarTraits_20250502.rds")
+write_rds(siteDetections_foliarTraits, "data/siteDetections_foliarTraits_20260313.rds")
 x <- as.data.frame(siteDetections_foliarTraits)
 x$geometry <- NULL
-write_csv(x, "siteDetections_foliarTraits_20250502.csv")
+write_csv(x, "data/siteDetections_foliarTraits_20260313.csv")
 
 
 ################################################################################
-# Get biocube variables
+# Get biocube variables (batch 1)
 ################################################################################
 
 # update buffer -----------------------------------------------------------------
 
-# buffer site locations
-sites.buffer <- st_buffer(siteDetections_foliarTraits, dist = 150) # 580
+# buffer site locations (we've removed some sites)
+sites.buffer <- st_buffer(siteDetections_foliarTraits, dist = 150) # 578
 # a 150 m radius buffer = about 9 hectares, avg home range size of small passerines
 sites.buffer <- sites.buffer[c("cell_unit", "long", "lat")]
 
 
 # get biocube paths and files --------------------------------------------------
 
-CAbiocube_files <- list.files("/Users/lauraberman/Library/CloudStorage/OneDrive-NationalUniversityofSingapore/Documents/Wisconsin/Townsend Lab/Traits and acoustics/California biocube layers")
 path_CA <- "/Users/lauraberman/Library/CloudStorage/OneDrive-NationalUniversityofSingapore/Documents/Wisconsin/Townsend Lab/Traits and acoustics/California biocube layers/"
+CAbiocube_files <- list.files(path_CA, full.names=TRUE)
 
+# function to extract one layer ------------------------------------------------
 
-# get values for first var -----------------------------------------------------
-
-x <- raster(paste(path_CA, CAbiocube_files[1], sep="")) # rasterize the file
-x <- raster::extract(x, sites.buffer, weights=TRUE, na.rm=TRUE, fun=mean) # extract values in buffer around each ARU
-x <- as.data.frame(cbind(sites.buffer, x)) # make it a dataframe
-colnames(x)[colnames(x)=="x"] <- paste(CAbiocube_files[1]) # give it an informative name
-x$geometry <- NULL 
-BioCube_vars <- x # this is the one line that changes outside the loop
-
-
-# loop the rest ----------------------------------------------------------(slow)
-
-for(i in 2:length(CAbiocube_files)) {
-  x <- raster(paste(path_CA, CAbiocube_files[i], sep=""))
-  x <- raster::extract(x, sites.buffer, weights=TRUE, na.rm=TRUE, fun=mean)
-  x <- as.data.frame(cbind(sites.buffer, x))
-  colnames(x)[colnames(x)=="x"] <- paste(CAbiocube_files[i])
-  x$geometry <- NULL 
-  BioCube_vars <- merge(BioCube_vars, x)
+get_biocube <- function(file){
+  r <- terra::rast(file)
+  x <- terra::extract(r, sites.buffer, method="simple", exact=TRUE, na.rm=TRUE, fun=mean)
+  x <- cbind(sites.buffer, x[,2])
+  names(x)[names(x)==names(x)[ncol(x)-1]] <- basename(file)
+  x$geometry <- NULL
+  as.data.frame(x)
 }
 
-# save it
-write_rds(BioCube_vars, "BioCube_vars_20250520.rds")
+# run all extractions ----------------------------------------------------------
+
+BioCube_vars <- Reduce(function(a,b) merge(a,b), lapply(CAbiocube_files, get_biocube))
+
+# save it ----------------------------------------------------------------------
+
+write_rds(BioCube_vars, "data/BioCube_vars1_20260313.rds")
 
 # tidy variable names ----------------------------------------------------------
 
 # load tidy names
-tidy <- read_csv("tidyNames.csv")
+tidy <- read_csv("/Users/lauraberman/Library/CloudStorage/OneDrive-NationalUniversityofSingapore/Documents/Wisconsin/Townsend Lab/Traits and acoustics/Draft 1/tidyNames.csv")
 
 # Create a named vector for renaming
 rename_map <- setNames(tidy$VariableName, tidy$FileName)
