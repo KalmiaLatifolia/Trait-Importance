@@ -15,6 +15,7 @@ library(future.apply)
 library(ggpubr)
 library(tidyr)
 library(purrr)
+library(report)
 
 # set working directory --------------------------------------------------------
 
@@ -566,13 +567,73 @@ my_cols  <- c("Climate"="#70A4AF", "Disturbance"="#7C4584", "Function"="#FDC71B"
 
 my_fills <- c("Climate"="#A4C4CB", "Disturbance"="#AC86B0", "Function"="#FFDB7D", "Phenology"="#ECAB90", "Physiology"="#B4777C", "Terrain"="#C7D3C4")
 
+tidy <- read.csv("data/var_labels.csv")
+
 ggplot(temp, aes(x=SHAP_importance, y=reorder(Feature, SHAP_importance), color=Category, fill=Category)) +
   geom_boxplot() +
   scale_color_manual(values = my_cols) +
   scale_fill_manual(values = my_fills) +
+  scale_y_discrete(labels = setNames(tidy$Label, tidy$Variable)) +
   theme_minimal() +
   ylab("Variable") +
-  xlab("SHAP Importance")
+  xlab("SHAP Importance") +
+  ggtitle(temp$species[1])
+
+# make Figure 3 ----------------------------------------------------------------
+
+my_cols  <- c("Climate"="#70A4AF", "Disturbance"="#7C4584", "Function"="#FDC71B", "Phenology"="#D97C55", "Physiology"="#842B3B", "Terrain"="#A8BBA3")
+
+my_fills <- c("Climate"="#A4C4CB", "Disturbance"="#AC86B0", "Function"="#FFDB7D", "Phenology"="#ECAB90", "Physiology"="#B4777C", "Terrain"="#C7D3C4")
+
+tidy <- read.csv("data/tidyNames.csv")
+
+make_shap_plot <- function(sp) {
+  temp <- subset(xgb_variableImportance, xgb_variableImportance$varSet=="spatVars" & xgb_variableImportance$species==sp)
+  
+  temp <- merge(temp, tidy, by.x= "Feature", by.y= "VariableName")
+  
+  top10 <- temp |> 
+    dplyr::group_by(Feature) |> 
+    dplyr::summarise(mean_shap = mean(SHAP_importance, na.rm=TRUE)) |> 
+    dplyr::slice_max(mean_shap, n = 10)
+  
+  temp <- temp |> dplyr::filter(Feature %in% top10$Feature)
+  
+  ggplot(temp, aes(x=SHAP_importance, y=reorder(Label, SHAP_importance), color=Category, fill=Category)) +
+    geom_boxplot() +
+    scale_color_manual(values = my_cols) +
+    scale_fill_manual(values = my_fills) +
+    theme_minimal() +
+    ylab("") +
+    xlab("SHAP Importance") +
+    theme(legend.position = "none") +
+    ggtitle(temp$species[1])
+}
+
+ssp <- c("Red.breasted.Nuthatch", 
+         "Hermit.Warbler",
+         "Lesser.Goldfinch",
+         "Western.Bluebird",
+         "Western.Tanager",
+         "Brown.Creeper",
+         "Red.Crossbill",
+         "American.Robin",
+         "Red.naped.Sapsucker",
+         "Blue.gray.Gnatcatcher",
+         "Hammond.s.Flycatcher",
+         "Spotted.Towhee",
+         "Black.headed.Grosbeak",
+         "Lazuli.Bunting",
+         "Fox.Sparrow",
+         "MacGillivray.s.Warbler",
+         "Oak.Titmouse",
+         "California.Scrub.Jay")
+
+plots <- lapply(ssp, make_shap_plot)
+ggarrange(plotlist = plots, ncol = 3, nrow = 6, align="hv")
+ggsave("Figure3.pdf", height=15, width=15)
+
+
 
 # which species R2 significantly improves with each category? ------------------
 
@@ -586,13 +647,17 @@ cat_ttest <- xgb_modelParameters %>%
             notTopo = t.test(R2_test[varSet=="spatVars"], R2_test[varSet=="notTopo"], alternative="greater")$p.value,
             R2 = max(R2_test))
 
+# exclude species with R2 < 0 
+cat_ttest <- cat_ttest[cat_ttest$species != "Chipping.Sparrow", ]
+cat_ttest <- cat_ttest[cat_ttest$species != "Brewer.s.Blackbird", ]
+
 # plot it
 
 ssp <- cat_ttest$species[cat_ttest$notTraits < 0.05]
 temp <- subset(xgb_modelParameters, species %in% ssp)
 temp <- subset(temp, temp$varSet=="spatVars" | temp$varSet=="notTraits")
-temp$varSet[temp$varSet=="notTraits"] <- "Without Leaf Physiology"
-temp$varSet[temp$varSet=="spatVars"] <- "With Leaf Physiology"
+temp$varSet[temp$varSet=="notTraits"] <- "Without Foliar Traits"
+temp$varSet[temp$varSet=="spatVars"] <- "With Foliar Traits"
 
 p1 <- ggplot(temp, aes(x=R2_test, y=reorder(species, R2_test), color=varSet, fill=varSet)) +
   geom_boxplot() +
@@ -625,8 +690,8 @@ p2 <- ggplot(temp, aes(x=R2_test, y=reorder(species, R2_test), color=varSet, fil
 ssp <- cat_ttest$species[cat_ttest$notFxn < 0.05]
 temp <- subset(xgb_modelParameters, species %in% ssp)
 temp <- subset(temp, temp$varSet=="spatVars" | temp$varSet=="notFxn")
-temp$varSet[temp$varSet=="notFxn"] <- "Without Ecosystem Function"
-temp$varSet[temp$varSet=="spatVars"] <- "With Ecosystem Function"
+temp$varSet[temp$varSet=="notFxn"] <- "Without Forest Structure"
+temp$varSet[temp$varSet=="spatVars"] <- "With Forest Structure"
 
 p3 <- ggplot(temp, aes(x=R2_test, y=reorder(species, R2_test), color=varSet, fill=varSet)) +
   geom_boxplot() +
@@ -667,10 +732,10 @@ p4 <- ggplot(temp, aes(x=R2_test, y=reorder(species, R2_test), color=varSet, fil
 
 
 annotate_figure(
-  ggarrange(p3, p1, p2, p4, ncol = 1, nrow = 4, heights = c(4, 3, 2, 1), align="hv"),
+  ggarrange(p3, p1, p2, ncol = 1, nrow = 3, heights = c(4, 3, 2), align="hv"),
   left = text_grob("Species with significant improvement", rot = 90, size = 14, vjust = 1))
 
-ggsave("SpeciesBestR2_20251202.pdf", height=10, width=8)
+ggsave("SpeciesBestR2_20260202.pdf", height=10, width=10)
 
 
 # SHAP scores vs variables -----------------------------------------------------
