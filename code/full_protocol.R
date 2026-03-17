@@ -276,7 +276,7 @@ sites.buffer <- sites.buffer[c("cell_unit", "long", "lat")]
 
 # get biocube paths and files --------------------------------------------------
 
-path_CA <- "/Users/lauraberman/Library/CloudStorage/OneDrive-NationalUniversityofSingapore/Documents/Wisconsin/Townsend Lab/Traits and acoustics/California biocube layers/"
+path_CA <- "/Users/lauraberman/Library/CloudStorage/OneDrive-NationalUniversityofSingapore/Documents/Wisconsin/Townsend Lab/Trait importance/BioCube_CA_Layers"
 CAbiocube_files <- list.files(path_CA, full.names=TRUE)
 
 # function to extract one layer ------------------------------------------------
@@ -284,6 +284,7 @@ CAbiocube_files <- list.files(path_CA, full.names=TRUE)
 get_biocube <- function(file){
   r <- terra::rast(file) # load the biocube layer
   x <- terra::extract(r, sites.buffer, method="simple", exact=TRUE, na.rm=TRUE, fun=mean) # extract from the site buffer
+  names(x)[2] <- tools::file_path_sans_ext(basename(file)) # ensure column name is descriptive
   x <- cbind(sites.buffer, x) # merge them
   x[c("ID","geometry","lat", "long")] <- NULL # remove extra rows that cause issues
   as.data.frame(x)
@@ -295,7 +296,7 @@ BioCube_vars <- Reduce(function(a,b) merge(a,b, by="cell_unit"), lapply(CAbiocub
 
 # save it ----------------------------------------------------------------------
 
-write_rds(BioCube_vars, "data/BioCube_vars1_20260313.rds")
+write_rds(BioCube_vars, "data/BioCube_vars_20260317.rds")
 
 ### LEFT OFF HERE - Friday MARCH 13TH 2026 
 
