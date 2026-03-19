@@ -11,6 +11,9 @@ library(geosphere)
 library(sf)
 library(mapview)
 library(terra)
+library(readxl)
+library(basemaps)
+library(ggspatial)
 
 # set working directory
 
@@ -23,8 +26,8 @@ setwd("/Users/lauraberman/Library/CloudStorage/OneDrive-NationalUniversityofSing
 # 2) Remove burned areas - 146
 # 3) Remove sites outside study area - 188
 # 4) Get foliar traits -211
-# 5) Get biocube variables (batch 1) - 266
-# 6) 
+# 5) Get biocube variables - 266
+# 6) Make a nice map - 342
 # 7)
 # 8)
 # 9)
@@ -205,6 +208,7 @@ write_rds(siteDetections, "data/siteDetections_20260311.rds")
 x <- as.data.frame(siteDetections)
 x$geometry <- NULL
 write_csv(x, "data/siteDetections_20260311.csv")
+# siteDetections <- readRDS("data/siteDetections_20260311.rds")
 
 
 ################################################################################
@@ -260,10 +264,11 @@ write_rds(siteDetections_foliarTraits, "data/siteDetections_foliarTraits_2026031
 x <- as.data.frame(siteDetections_foliarTraits)
 x$geometry <- NULL
 write_csv(x, "data/siteDetections_foliarTraits_20260313.csv")
+# siteDetections_foliarTraits <- readRDS("data/siteDetections_foliarTraits_20260313.rds")
 
 
 ################################################################################
-# Get biocube variables (batch 1)
+# Get biocube variables (will need to re-run from here once I get Fabian's metadata)
 ################################################################################
 
 # update buffer -----------------------------------------------------------------
@@ -297,21 +302,14 @@ BioCube_vars <- Reduce(function(a,b) merge(a,b, by="cell_unit"), lapply(CAbiocub
 # save it ----------------------------------------------------------------------
 
 write_rds(BioCube_vars, "data/BioCube_vars_20260317.rds")
-
-### LEFT OFF HERE - Friday MARCH 13TH 2026 
-
-################################################################################
-################################################################################
-################################################################################
-################################################################################
-################################################################################
-
+# BioCube_vars <- readRDS("data/BioCube_vars_20260317.rds")
 
 
 # tidy variable names ----------------------------------------------------------
 
 # load tidy names
-tidy <- read_csv("/Users/lauraberman/Library/CloudStorage/OneDrive-NationalUniversityofSingapore/Documents/Wisconsin/Townsend Lab/Traits and acoustics/Draft 1/tidyNames.csv")
+tidy <- read_excel("/Users/lauraberman/Library/CloudStorage/OneDrive-NationalUniversityofSingapore/Documents/Wisconsin/Townsend Lab/Trait importance/TableS1_Biocube_var_description.xlsx",
+                   range = cell_cols(1:3))
 
 # Create a named vector for renaming
 rename_map <- setNames(tidy$VariableName, tidy$FileName)
@@ -331,14 +329,12 @@ write_rds(siteDetections_foliarTraits_BioCube, "data/siteDetections_foliarTraits
 write_csv(siteDetections_foliarTraits_BioCube, "data/siteDetections_foliarTraits_BioCube_20260313.csv")
 
 
-
 ################################################################################
 #  make a nice map
 ################################################################################
 
 # update sites
 sites <- siteDetections_foliarTraits_BioCube[c("cell_unit", "long", "lat")]
-sites <- st_as_sf(sites, coords = c("long", "lat"), crs=4326, remove=FALSE)
 
 # Create bounding box
 ext <- st_as_sfc(st_bbox(c(
@@ -347,17 +343,13 @@ ext <- st_as_sfc(st_bbox(c(
 ), crs = 4326))
 
 # Transform to EPSG:3857 (Web Mercator)
-ext_3857 <- st_transform(ext, 3857)
-sites_3857 <- st_transform(sites, 3857)
-
-# set default basemap settings
-basemaps::set_defaults(ext = ext_3857)
+ext <- st_transform(ext, 3857)
 
 #plot it
 ggplot() +
-  basemap_gglayer(ext_3857, map_service = "esri", map_type = "world_dark_gray_base") +
+  basemap_gglayer(ext, map_service = "esri", map_type = "world_dark_gray_base") +
   scale_fill_identity() + 
-  geom_sf(data = sites_3857, color = "navy", size = 1, show.legend = FALSE, alpha=0.5) +
+  geom_sf(data = sites, color = "navy", size = 1, show.legend = FALSE, alpha=0.5) +
   annotation_scale(location = "bl", width_hint = 0.2) +
   annotation_north_arrow(location = "tl", which_north = "true",
                          style = north_arrow_fancy_orienteering) +
@@ -370,9 +362,9 @@ ggplot() +
 
 
 ggplot() +
-  basemap_gglayer(ext_3857, map_service = "esri", map_type = "world_physical_map") +
+  basemap_gglayer(ext, map_service = "esri", map_type = "world_physical_map") +
   scale_fill_identity() + 
-  geom_sf(data = sites_3857, color = "navy", size = 1, show.legend = FALSE, alpha=0.5) +
+  geom_sf(data = sites, color = "navy", size = 1, show.legend = FALSE, alpha=0.5) +
   annotation_scale(location = "bl", width_hint = 0.2) +
   annotation_north_arrow(location = "tl", which_north = "true",
                          style = north_arrow_fancy_orienteering) +
@@ -384,6 +376,17 @@ ggplot() +
   ylab("")
 
 ggsave("point_map.pdf", height=7, width=5)
+
+
+### LEFT OFF HERE - Monday MARCH 19TH 2026 
+
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+
+
 
 ################################################################################
 # check for colinearity
