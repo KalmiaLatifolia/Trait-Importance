@@ -305,19 +305,6 @@ write_rds(BioCube_vars, "data/BioCube_vars_20260317.rds")
 # BioCube_vars <- readRDS("data/BioCube_vars_20260317.rds")
 
 
-# tidy variable names ----------------------------------------------------------
-
-# load tidy names
-tidy <- read_excel("/Users/lauraberman/Library/CloudStorage/OneDrive-NationalUniversityofSingapore/Documents/Wisconsin/Townsend Lab/Trait importance/TableS1_Biocube_var_description.xlsx",
-                   range = cell_cols(1:3))
-
-# Create a named vector for renaming
-rename_map <- setNames(tidy$VariableName, tidy$FileName)
-
-# Rename only columns in BioCube that are in tidy$file
-names(BioCube_vars)[names(BioCube_vars) %in% names(rename_map)] <- rename_map[names(BioCube_vars)[names(BioCube_vars) %in% names(rename_map)]]
-
-
 # merge with detections and foliar traits --------------------------------------
 
 siteDetections_foliarTraits_BioCube <- merge(siteDetections_foliarTraits, BioCube_vars)
@@ -402,10 +389,10 @@ siteDetections_foliarTraits_BioCube$`Wild Turkey` <- NULL
 siteDetections_foliarTraits_BioCube$`Tree Swallow` <- NULL
 siteDetections_foliarTraits_BioCube$`Brown-headed Cowbird` <- NULL
 siteDetections_foliarTraits_BioCube$`California Thrasher` <- NULL
-siteDetections_foliarTraits_BioCube$`Ice cover` <- NULL
-siteDetections_foliarTraits_BioCube$`Min nightlight` <- NULL
-siteDetections_foliarTraits_BioCube$`Built-up cover` <- NULL
-siteDetections_foliarTraits_BioCube$`Energy production cover` <- NULL
+siteDetections_foliarTraits_BioCube$CA_Anthropocene_Hoskins_et_al_LU2005_ICE <- NULL
+siteDetections_foliarTraits_BioCube$CA_Anthropocene_Li_et_al_NTL_min <- NULL
+siteDetections_foliarTraits_BioCube$CA_Anthropocene_Theobald_et_al_tGHM_bu <- NULL
+siteDetections_foliarTraits_BioCube$CA_Anthropocene_Theobald_et_al_tGHM_en <- NULL
 
 
 # these variables are perfectly identical --------------------------------------
@@ -415,7 +402,7 @@ which(abs(cor_matrix) == 1 & row(cor_matrix) != col(cor_matrix), arr.ind = TRUE)
 # removing the older one from the file folder: CA_Function_GEDI_Cali_StructuralRichness_1km_20240120
 
 # remove duplicate variables ---------------------------------------------------
-siteDetections_foliarTraits_BioCube$`Structural Richness` <- NULL
+siteDetections_foliarTraits_BioCube$CA_Function_GEDI_Cali_StructuralRichness_1km_20240120 <- NULL
 
 # check for variables with outliers/artifacts ----------------------------------
 df_num <- st_drop_geometry(siteDetections_foliarTraits_BioCube[-1])
@@ -426,12 +413,12 @@ list(
   row = row(m)[idx],
   column = colnames(m)[col(m)[idx]],
   value = m[idx])
-hist(siteDetections_foliarTraits_BioCube$`Growing season precip`)
+hist(siteDetections_foliarTraits_BioCube$CA_Climate_CHELSA_gsp_v2)
 
 # remove outlier variables -----------------------------------------------------
-siteDetections_foliarTraits_BioCube$`Road emmissions` <- NULL
+siteDetections_foliarTraits_BioCube$CA_Anthropocene_NASA_DARTE <- NULL
 
-# siteDetections_foliarTraits_BioCube has 587 obs of 246 vars
+# siteDetections_foliarTraits_BioCube has 578 obs of 246 vars
 
 ################################################################################
 # Exclude rarely detected species
@@ -446,11 +433,42 @@ siteDetections_foliarTraits_BioCube$`Song Sparrow` <- NULL
 siteDetections_foliarTraits_BioCube$`Vaux's Swift` <- NULL
 siteDetections_foliarTraits_BioCube$`Yellow-breasted Chat` <- NULL
 
-# siteDetections_foliarTraits_BioCube has 587 obs of 243 vars
+################################################################################
+# Drop geometry 
+################################################################################
+
+siteDetections_foliarTraits_BioCube <- st_drop_geometry(siteDetections_foliarTraits_BioCube)
+
+################################################################################
+# Exclude NA variables + sites
+################################################################################
+
+# How many NAs in each column? -------------------------------------------------
+x <- as.data.frame(colSums(is.na(siteDetections_foliarTraits_BioCube)))
+# burnYear = 348
+# Snow cover days = 315
+# Snow water equivalent = 315
+# Frost change frequency = 71
+# Tree sp richness = 25
+
+# remove variables with more than 20 NA values ---------------------------------
+siteDetections_foliarTraits_BioCube$burnYear <- NULL
+siteDetections_foliarTraits_BioCube$CA_Climate_CHELSA_scd_v2 <- NULL
+siteDetections_foliarTraits_BioCube$CA_Climate_CHELSA_swe_v2 <- NULL
+siteDetections_foliarTraits_BioCube$CA_Climate_CHELSA_fcf_v2 <- NULL
+siteDetections_foliarTraits_BioCube$CA_Diversity_Liang_et_al_2022_Tree_SR <- NULL
+
+# check how many rows still have NAs -------------------------------------------
+x <- as.data.frame(rowSums(is.na(siteDetections_foliarTraits_BioCube)))
+
+# Remove rows that still have NA values ----------------------------------------
+siteDetections_foliarTraits_BioCube <- siteDetections_foliarTraits_BioCube[complete.cases(siteDetections_foliarTraits_BioCube), ]
+
+# siteDetections_foliarTraits_BioCube has 553 obs of 237 vars
 
 # save it ----------------------------------------------------------------------
-write_rds(siteDetections_foliarTraits_BioCube, "data/siteDetections_foliarTraits_BioCube_20260313.rds")
-write_csv(siteDetections_foliarTraits_BioCube, "data/siteDetections_foliarTraits_BioCube_20260313.csv")
+write_rds(siteDetections_foliarTraits_BioCube, "data/siteDetections_foliarTraits_BioCube_20260320.rds")
+write_csv(siteDetections_foliarTraits_BioCube, "data/siteDetections_foliarTraits_BioCube_20260320.csv")
 
 
 ################################################################################
@@ -458,8 +476,59 @@ write_csv(siteDetections_foliarTraits_BioCube, "data/siteDetections_foliarTraits
 ################################################################################
 
 # set up variable groups -------------------------------------------------------
-species = siteDetections_foliarTraits_BioCube[4:100]
-spatVars  = siteDetections_foliarTraits_BioCube[97:178]
+species = siteDetections_foliarTraits_BioCube[4:97]
+spatVars  = siteDetections_foliarTraits_BioCube[98:237]
+
+# NFPD function ----------------------------------------------------------------
+FPD <- function(species_col) {species_col / max(species_col)}
+meanFPD <- function(species_col) {mean(FPD(species_col)[FPD(species_col)>0])}
+NFPD <- function(species_col) {(FPD(species_col))^(log(0.5)/log(meanFPD(species_col)))}
+
+
+# spearman correlation for non-linear monotonic relationships ------------------
+spTraitCors <- as.data.frame(cor(NFPD(species), spatVars, method = "spearman"))
+
+# pivot longer -----------------------------------------------------------------
+cors_df <- as.data.frame(spTraitCors) %>%
+  rownames_to_column("species") %>%           
+  pivot_longer(-species, names_to = "Variable", values_to = "rho") 
+
+# hclust rows and columns ------------------------------------------------------
+
+# row cluster order
+row_dist <- dist(spTraitCors, method = "euclidean") 
+row_hc <- hclust(row_dist, method = "complete")$order
+
+# column cluster order
+col_dist <- dist(t(spTraitCors), method = "euclidean")
+col_hc <- hclust(col_dist, method = "complete")$order
+
+# Tidy variable labels ---------------------------------------------------------
+
+# load tidy names
+tidy <- read_excel("/Users/lauraberman/Library/CloudStorage/OneDrive-NationalUniversityofSingapore/Documents/Wisconsin/Townsend Lab/Trait importance/TableS1_Biocube_var_description.xlsx",
+                   range = cell_cols(1:4))
+
+# add variable labels
+cors_df <- cors_df %>%
+  left_join(var_labels, by = "Variable") %>%
+  mutate(Label = factor(Label, levels = var_labels$Label))  # preserve desired axis order
+
+
+# plot it ----------------------------------------------------------------------
+ggplot(cors_df,
+       aes(x = factor(Variable, levels = colnames(spTraitCors)[col_hc]),
+           y = factor(species, levels = rownames(spTraitCors)[row_hc]),
+           fill = rho)) +
+  geom_tile() +
+  scale_fill_gradient2(limits = c(-0.8, 0.8), midpoint = 0, name = "Spearman’s ρ") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(size = 6, angle = 45, hjust = 1,
+                                   colour = var_labels$lab_color[match(colnames(spTraitCors)[col_ord], var_labels$Variable)]),
+        axis.text.y = element_text(size = 6)) +
+  xlab("") +
+  ylab("") +
+  scale_x_discrete(labels = var_labels$Label[match(colnames(spTraitCors)[col_ord], var_labels$Variable)])
 
 
 ### LEFT OFF HERE - MARCH 19TH 2026 
