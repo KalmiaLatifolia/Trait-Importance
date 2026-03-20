@@ -22,18 +22,18 @@ setwd("/Users/lauraberman/Library/CloudStorage/OneDrive-NationalUniversityofSing
 ################################################################################
 # Table of Contents
 ################################################################################
-# 1) Load and format Bioacoustic data - 33
+# 1) Load and format bioacoustic data - 33
 # 2) Remove burned areas - 146
 # 3) Remove sites outside study area - 188
 # 4) Get foliar traits -211
 # 5) Get biocube variables - 266
-# 6) Make a nice map - 342
-# 7)
-# 8)
-# 9)
+# 6) Make a nice map (Figure 1) - 342
+# 7) Exclude duplicate/no variance variables - 383
+# 8) Exclude rarely detected species - 437
+# 9) Make a correlation matrix plot (Figure 5) - 438
 
 ################################################################################
-# Load and format Bioacoustic data
+# Load and format bioacoustic data
 ################################################################################
 
 # load ARU locations -----------------------------------------------------------
@@ -378,7 +378,91 @@ ggplot() +
 ggsave("point_map.pdf", height=7, width=5)
 
 
-### LEFT OFF HERE - Monday MARCH 19TH 2026 
+
+################################################################################
+# Exclude duplicate/no variance variables
+################################################################################
+
+# correlation matrix of variables ----------------------------------------------
+cor_matrix <- cor(st_drop_geometry(siteDetections_foliarTraits_BioCube[-1]), use = "complete.obs")
+
+# These variables have only NA values in the cor matrix and should be dropped:
+sum(siteDetections_foliarTraits_BioCube$`Energy production cover` != 0, na.rm = TRUE)
+# Wild Turkey - only 13 non-zero values
+# Tree Swallow - only 2 non-zero values
+# Brown-headed Cowbird - only 15 non-zero values
+# California Thrasher - only 2 non-zero values
+# Ice cover - only zero values
+# Min nightlight - only 14 non-zero values
+# Built-up cover - only 3 non-zero values
+# Energy production cover - 58 non-zero values (essentially binary)
+
+# remove NA variables ----------------------------------------------------------
+siteDetections_foliarTraits_BioCube$`Wild Turkey` <- NULL
+siteDetections_foliarTraits_BioCube$`Tree Swallow` <- NULL
+siteDetections_foliarTraits_BioCube$`Brown-headed Cowbird` <- NULL
+siteDetections_foliarTraits_BioCube$`California Thrasher` <- NULL
+siteDetections_foliarTraits_BioCube$`Ice cover` <- NULL
+siteDetections_foliarTraits_BioCube$`Min nightlight` <- NULL
+siteDetections_foliarTraits_BioCube$`Built-up cover` <- NULL
+siteDetections_foliarTraits_BioCube$`Energy production cover` <- NULL
+
+
+# these variables are perfectly identical --------------------------------------
+which(abs(cor_matrix) == 1 & row(cor_matrix) != col(cor_matrix), arr.ind = TRUE)
+# structural richness and functional richness are identical variables
+# CA_Diversity_GEDI_FRic.tiff and CA_Function_GEDI_Cali_StructuralRichness_1km_20240120.tiff
+# removing the older one from the file folder: CA_Function_GEDI_Cali_StructuralRichness_1km_20240120
+
+# remove duplicate variables ---------------------------------------------------
+siteDetections_foliarTraits_BioCube$`Structural Richness` <- NULL
+
+# check for variables with outliers/artifacts ----------------------------------
+df_num <- st_drop_geometry(siteDetections_foliarTraits_BioCube[-1])
+boxplot(df_num, las=2)
+m <- as.matrix(df_num)
+idx <- which.max(m)
+list(
+  row = row(m)[idx],
+  column = colnames(m)[col(m)[idx]],
+  value = m[idx])
+hist(siteDetections_foliarTraits_BioCube$`Growing season precip`)
+
+# remove outlier variables -----------------------------------------------------
+siteDetections_foliarTraits_BioCube$`Road emmissions` <- NULL
+
+# siteDetections_foliarTraits_BioCube has 587 obs of 246 vars
+
+################################################################################
+# Exclude rarely detected species
+################################################################################
+
+# count number of detection sites ----------------------------------------------
+species = siteDetections_foliarTraits_BioCube[4:100]
+x <- as.data.frame(sapply(species, function(x) sum(x != 0, na.rm = TRUE)))
+
+# remove species detected at fewer than 50 sites -------------------------------
+siteDetections_foliarTraits_BioCube$`Song Sparrow` <- NULL
+siteDetections_foliarTraits_BioCube$`Vaux's Swift` <- NULL
+siteDetections_foliarTraits_BioCube$`Yellow-breasted Chat` <- NULL
+
+# siteDetections_foliarTraits_BioCube has 587 obs of 243 vars
+
+# save it ----------------------------------------------------------------------
+write_rds(siteDetections_foliarTraits_BioCube, "data/siteDetections_foliarTraits_BioCube_20260313.rds")
+write_csv(siteDetections_foliarTraits_BioCube, "data/siteDetections_foliarTraits_BioCube_20260313.csv")
+
+
+################################################################################
+# Make a correlation matrix plot (Figure 5)
+################################################################################
+
+# set up variable groups -------------------------------------------------------
+species = siteDetections_foliarTraits_BioCube[4:100]
+spatVars  = siteDetections_foliarTraits_BioCube[97:178]
+
+
+### LEFT OFF HERE - MARCH 19TH 2026 
 
 ################################################################################
 ################################################################################
@@ -388,13 +472,8 @@ ggsave("point_map.pdf", height=7, width=5)
 
 
 
-################################################################################
-# check for colinearity
-################################################################################
 
-# 90% cutoff
-
-cor_matrix <- cor(siteDetections_foliarTraits_BioCube[,97:182], use = "complete.obs")
+cor_matrix <- cor(st_drop_geometry(siteDetections_foliarTraits_BioCube[-1]), use = "complete.obs")
 corrplot(cor_matrix,
          method = "color",
          order = "hclust",         
