@@ -247,6 +247,7 @@ write_rds(foliarTraits, "data/foliarTraits_20260313.rds")
 x <- as.data.frame(foliarTraits)
 x$geometry <- NULL 
 write_csv(x, "data/foliarTraits_20260313.csv")
+#foliarTraits <- readRDS("data/foliarTraits_20260313.rds")
 
 # merge foliar traits with siteDetections --------------------------------------
 
@@ -314,55 +315,6 @@ siteDetections_foliarTraits_BioCube <- merge(siteDetections_foliarTraits, BioCub
 
 write_rds(siteDetections_foliarTraits_BioCube, "data/siteDetections_foliarTraits_BioCube_20260313.rds")
 write_csv(siteDetections_foliarTraits_BioCube, "data/siteDetections_foliarTraits_BioCube_20260313.csv")
-
-
-################################################################################
-#  make a nice map
-################################################################################
-
-# update sites
-sites <- siteDetections_foliarTraits_BioCube[c("cell_unit", "long", "lat")]
-
-# Create bounding box
-ext <- st_as_sfc(st_bbox(c(
-  xmin = -121, xmax = -118.5,
-  ymin = 36.5, ymax = 39.5
-), crs = 4326))
-
-# Transform to EPSG:3857 (Web Mercator)
-ext <- st_transform(ext, 3857)
-
-#plot it
-ggplot() +
-  basemap_gglayer(ext, map_service = "esri", map_type = "world_dark_gray_base") +
-  scale_fill_identity() + 
-  geom_sf(data = sites, color = "navy", size = 1, show.legend = FALSE, alpha=0.5) +
-  annotation_scale(location = "bl", width_hint = 0.2) +
-  annotation_north_arrow(location = "tl", which_north = "true",
-                         style = north_arrow_fancy_orienteering) +
-  coord_sf(xlim = st_bbox(ext_3857)[c("xmin", "xmax")],
-           ylim = st_bbox(ext_3857)[c("ymin", "ymax")],
-           expand = FALSE) +
-  theme(legend.position = "none") +
-  xlab("") +
-  ylab("")
-
-
-ggplot() +
-  basemap_gglayer(ext, map_service = "esri", map_type = "world_physical_map") +
-  scale_fill_identity() + 
-  geom_sf(data = sites, color = "navy", size = 1, show.legend = FALSE, alpha=0.5) +
-  annotation_scale(location = "bl", width_hint = 0.2) +
-  annotation_north_arrow(location = "tl", which_north = "true",
-                         style = north_arrow_fancy_orienteering) +
-  coord_sf(xlim = st_bbox(ext_3857)[c("xmin", "xmax")],
-           ylim = st_bbox(ext_3857)[c("ymin", "ymax")],
-           expand = FALSE) +
-  theme(legend.position = "none") +
-  xlab("") +
-  ylab("")
-
-ggsave("point_map.pdf", height=7, width=5)
 
 
 
@@ -434,12 +386,6 @@ siteDetections_foliarTraits_BioCube$`Vaux's Swift` <- NULL
 siteDetections_foliarTraits_BioCube$`Yellow-breasted Chat` <- NULL
 
 ################################################################################
-# Drop geometry 
-################################################################################
-
-siteDetections_foliarTraits_BioCube <- st_drop_geometry(siteDetections_foliarTraits_BioCube)
-
-################################################################################
 # Exclude NA variables + sites
 ################################################################################
 
@@ -462,13 +408,69 @@ siteDetections_foliarTraits_BioCube$CA_Diversity_Liang_et_al_2022_Tree_SR <- NUL
 x <- as.data.frame(rowSums(is.na(siteDetections_foliarTraits_BioCube)))
 
 # Remove rows that still have NA values ----------------------------------------
-siteDetections_foliarTraits_BioCube <- siteDetections_foliarTraits_BioCube[complete.cases(siteDetections_foliarTraits_BioCube), ]
+siteDetections_foliarTraits_BioCube <- siteDetections_foliarTraits_BioCube[complete.cases(st_drop_geometry(siteDetections_foliarTraits_BioCube)), ]
 
 # siteDetections_foliarTraits_BioCube has 553 obs of 237 vars
 
 # save it ----------------------------------------------------------------------
 write_rds(siteDetections_foliarTraits_BioCube, "data/siteDetections_foliarTraits_BioCube_20260320.rds")
 write_csv(siteDetections_foliarTraits_BioCube, "data/siteDetections_foliarTraits_BioCube_20260320.csv")
+
+
+################################################################################
+#  make a nice map
+################################################################################
+
+# update sites
+sites <- siteDetections_foliarTraits_BioCube[c("cell_unit", "long", "lat")]
+
+# Create bounding box
+ext <- st_as_sfc(st_bbox(c(
+  xmin = -121, xmax = -118.5,
+  ymin = 36.5, ymax = 39.5
+), crs = 4326))
+
+# Transform to EPSG:3857 (Web Mercator)
+ext <- st_transform(ext, 3857)
+
+# plot it - grey base
+ggplot() +
+  basemap_gglayer(ext, map_service = "esri", map_type = "world_dark_gray_base") +
+  scale_fill_identity() + 
+  geom_sf(data = sites, color = "navy", size = 1, show.legend = FALSE, alpha=0.5) +
+  annotation_scale(location = "bl", width_hint = 0.2) +
+  annotation_north_arrow(location = "tl", which_north = "true",
+                         style = north_arrow_fancy_orienteering) +
+  coord_sf(xlim = st_bbox(ext)[c("xmin", "xmax")],
+           ylim = st_bbox(ext)[c("ymin", "ymax")],
+           expand = FALSE) +
+  theme(legend.position = "none") +
+  xlab("") +
+  ylab("")
+
+# plot it - terrain base
+ggplot() +
+  basemap_gglayer(ext, map_service = "esri", map_type = "world_physical_map") +
+  scale_fill_identity() + 
+  geom_sf(data = sites, color = "navy", size = 1, show.legend = FALSE, alpha=0.5) +
+  annotation_scale(location = "bl", width_hint = 0.2) +
+  annotation_north_arrow(location = "tl", which_north = "true",
+                         style = north_arrow_fancy_orienteering) +
+  coord_sf(xlim = st_bbox(ext)[c("xmin", "xmax")],
+           ylim = st_bbox(ext)[c("ymin", "ymax")],
+           expand = FALSE) +
+  theme(legend.position = "none") +
+  xlab("") +
+  ylab("")
+
+ggsave("point_map.pdf", height=7, width=5)
+
+
+################################################################################
+# Drop geometry 
+################################################################################
+
+siteDetections_foliarTraits_BioCube <- st_drop_geometry(siteDetections_foliarTraits_BioCube)
 
 
 ################################################################################
@@ -495,13 +497,11 @@ cors_df <- as.data.frame(spTraitCors) %>%
 
 # hclust rows and columns ------------------------------------------------------
 
-# row cluster order
-row_dist <- dist(spTraitCors, method = "euclidean") 
-row_hc <- hclust(row_dist, method = "complete")$order
+row_hc <- hclust(as.dist(1 - cor(t(spTraitCors), method = "spearman")), 
+                  method = "average")$order
 
-# column cluster order
-col_dist <- dist(t(spTraitCors), method = "euclidean")
-col_hc <- hclust(col_dist, method = "complete")$order
+col_hc <- hclust(as.dist(1 - cor(spTraitCors, method = "spearman")),
+                  method = "average")$order
 
 # Tidy variable labels ---------------------------------------------------------
 
@@ -509,10 +509,10 @@ col_hc <- hclust(col_dist, method = "complete")$order
 tidy <- read_excel("/Users/lauraberman/Library/CloudStorage/OneDrive-NationalUniversityofSingapore/Documents/Wisconsin/Townsend Lab/Trait importance/TableS1_Biocube_var_description.xlsx",
                    range = cell_cols(1:4))
 
-# add variable labels
+# add variable labels to correlation dataframe 
 cors_df <- cors_df %>%
-  left_join(var_labels, by = "Variable") %>%
-  mutate(Label = factor(Label, levels = var_labels$Label))  # preserve desired axis order
+  left_join(tidy, by = "Variable") %>%
+  mutate(Label = factor(Label, levels = tidy$Label))  # preserve desired axis order
 
 
 # plot it ----------------------------------------------------------------------
@@ -521,17 +521,21 @@ ggplot(cors_df,
            y = factor(species, levels = rownames(spTraitCors)[row_hc]),
            fill = rho)) +
   geom_tile() +
-  scale_fill_gradient2(limits = c(-0.8, 0.8), midpoint = 0, name = "Spearman’s ρ") +
+  scale_fill_gradient2(limits = c(-0.85, 0.8), midpoint = 0, name = "Spearman’s ρ") +
   theme_minimal() +
   theme(axis.text.x = element_text(size = 6, angle = 45, hjust = 1,
-                                   colour = var_labels$lab_color[match(colnames(spTraitCors)[col_ord], var_labels$Variable)]),
+                                   colour = tidy$labelColor[match(colnames(spTraitCors)[col_hc], tidy$Variable)]),
         axis.text.y = element_text(size = 6)) +
   xlab("") +
   ylab("") +
-  scale_x_discrete(labels = var_labels$Label[match(colnames(spTraitCors)[col_ord], var_labels$Variable)])
+  scale_x_discrete(labels = tidy$Label[match(colnames(spTraitCors)[col_hc], tidy$Variable)])
+
+# save it
+ggsave("figures/Correlation_Matrix.pdf", height=10, width=15)
 
 
-### LEFT OFF HERE - MARCH 19TH 2026 
+
+### LEFT OFF HERE - MARCH 20TH 2026 
 
 ################################################################################
 ################################################################################
@@ -542,63 +546,6 @@ ggplot(cors_df,
 
 
 
-cor_matrix <- cor(st_drop_geometry(siteDetections_foliarTraits_BioCube[-1]), use = "complete.obs")
-corrplot(cor_matrix,
-         method = "color",
-         order = "hclust",         
-         hclust.method = "complete", 
-         addrect = 3,             
-         tl.cex = 0.8)
 
-high_corr_matrix <- cor_matrix
-high_corr_matrix[abs(high_corr_matrix) < 0.95 | diag(ncol(high_corr_matrix)) == 1] <- 0  
-corrplot(high_corr_matrix,
-         method = "color",
-         order = "hclust",
-         hclust.method = "complete", 
-         tl.cex = 0.8)
-
-high_corr_pairs <- as.data.frame(as.table(cor_matrix)) %>%
-  filter(Var1 != Var2, abs(Freq) > 0.9)
-
-# in Cali, there are dry summers and wet winters, so some bioclim vars are duplicate.
-# bio16 and bio19 are 0.999 identical. precip of wettest/coldest quarter. remove bio16(wettest)?
-# bio09 and bio10 are 0.999 identical. temp of dryest/warmest quarter. remove bio09(dryest)?
-# ggd5 and gdd10 are 0.999 identical. remove gdd5?
-# bio08 and bio11 are 0.998 identical. temp of wettest/coldest quarter. remove bio11(coldest)?
-# swe and ngd0 are 0.98 identical. remove ngd0
-# swe and scd 0.98 identical
-
-# All these are > 95% correlated with DTM
-# bio01, bio05, bio06, bio08, bio10, gdd10, ngd10, ngd5, annualPET, PETDryQuart, PETseas, PETWarmQuart, thermInd
-
-# remove
-siteDetections_foliarTraits_BioCube$bio16 <- NULL
-siteDetections_foliarTraits_BioCube$bio09 <- NULL
-siteDetections_foliarTraits_BioCube$gdd5 <- NULL
-siteDetections_foliarTraits_BioCube$bio11 <- NULL
-siteDetections_foliarTraits_BioCube$bio01 <- NULL
-siteDetections_foliarTraits_BioCube$bio05 <- NULL
-siteDetections_foliarTraits_BioCube$bio06 <- NULL
-siteDetections_foliarTraits_BioCube$bio08 <- NULL
-siteDetections_foliarTraits_BioCube$bio10 <- NULL
-siteDetections_foliarTraits_BioCube$gdd0 <- NULL
-siteDetections_foliarTraits_BioCube$gdd10 <- NULL
-siteDetections_foliarTraits_BioCube$ngd10 <- NULL
-siteDetections_foliarTraits_BioCube$ngd5 <- NULL
-siteDetections_foliarTraits_BioCube$annualPET <- NULL
-siteDetections_foliarTraits_BioCube$PETDryQuart <- NULL
-siteDetections_foliarTraits_BioCube$PETseas <- NULL
-siteDetections_foliarTraits_BioCube$PETWarmQuart <- NULL
-siteDetections_foliarTraits_BioCube$ngd0 <- NULL
-siteDetections_foliarTraits_BioCube$thermInd <- NULL
-siteDetections_foliarTraits_BioCube$TRI <- NULL
-siteDetections_foliarTraits_BioCube$scd <- NULL
-siteDetections_foliarTraits_BioCube$bio19 <- NULL
-siteDetections_foliarTraits_BioCube$Starch <- NULL
-
-# save updated version
-write_rds(siteDetections_foliarTraits_BioCube, "siteDetections_foliarTraits_BioCube_20250522.rds")
-write_csv(siteDetections_foliarTraits_BioCube, "siteDetections_foliarTraits_BioCube_20250522.csv")
 
 
