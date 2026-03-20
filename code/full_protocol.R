@@ -22,15 +22,28 @@ setwd("/Users/lauraberman/Library/CloudStorage/OneDrive-NationalUniversityofSing
 ################################################################################
 # Table of Contents
 ################################################################################
-# 1) Load and format bioacoustic data - 33
-# 2) Remove burned areas - 146
-# 3) Remove sites outside study area - 188
-# 4) Get foliar traits -211
-# 5) Get biocube variables - 266
-# 6) Make a nice map (Figure 1) - 342
-# 7) Exclude duplicate/no variance variables - 383
-# 8) Exclude rarely detected species - 437
-# 9) Make a correlation matrix plot (Figure 5) - 438
+
+# Data processing --------------------------------------------------------------
+# 1) Load and format bioacoustic data - 45
+# 2) Remove burned areas - 158
+# 3) Remove sites outside study area - 200
+# 4) Get foliar traits -224
+# 5) Get biocube variables - 281
+# 6) Exclude duplicate/no variance variables - 331
+# 7) Exclude rarely detected species - 385
+# 8) Exclude NA variables + sites - 399
+
+# Create Figures ---------------------------------------------------------------
+# 9) Make a nice map (Figure 1) - 433
+# 10) Drop geometry - 482
+# 11) Make a correlation matrix plot (Figure 5) - 490
+
+
+
+
+
+
+
 
 ################################################################################
 # Load and format bioacoustic data
@@ -269,7 +282,7 @@ write_csv(x, "data/siteDetections_foliarTraits_20260313.csv")
 
 
 ################################################################################
-# Get biocube variables (will need to re-run from here once I get Fabian's metadata)
+# Get biocube variables
 ################################################################################
 
 # update buffer -----------------------------------------------------------------
