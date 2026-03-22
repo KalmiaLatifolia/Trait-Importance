@@ -14,6 +14,9 @@ library(terra)
 library(readxl)
 library(basemaps)
 library(ggspatial)
+library(randomForest)
+library(VSURF)
+library(future.apply)
 
 # set working directory
 
@@ -557,8 +560,64 @@ ggsave("figures/Correlation_Matrix.pdf", height=10, width=15)
 ################################################################################
 
 
+################################################################################
+# Calculate species dependence (how important are var groups for each species?)
+################################################################################
 
+# load tidy names --------------------------------------------------------------
+tidy <- read_excel("/Users/lauraberman/Library/CloudStorage/OneDrive-NationalUniversityofSingapore/Documents/Wisconsin/Townsend Lab/Trait importance/TableS1_Biocube_var_description.xlsx",
+                   range = cell_cols(1:4))
 
+# only keep current variables --------------------------------------------------
+tidy <- tidy[tidy$Variable %in% colnames(siteDetections_foliarTraits_BioCube), ]
 
+# name variable grouping -------------------------------------------------------
+names(siteDetections_foliarTraits_BioCube)
+species <- colnames(siteDetections_foliarTraits_BioCube)[4:97]
+varGroups <- list(
+  spatVars  = tidy$Variable,
+  notTraits = tidy$Variable[tidy$Category != "Traits"],
+  notDist   = tidy$Variable[tidy$Category != "Disturbance"],
+  notClim   = tidy$Variable[tidy$Category != "Climate"],
+  notStr    = tidy$Variable[tidy$Category != "Structure"],
+  notPheno  = tidy$Variable[tidy$Category != "Phenology"],
+  notTerr   = tidy$Variable[tidy$Category != "Terrain"]
+)
+
+# Build a list of data frames, one per variable group --------------------------
+X_list <- lapply(varGroups, function(cols) siteDetections_foliarTraits_BioCube[, cols, drop=FALSE])
+
+# set up parallel processing ---------------------------------------------------
+plan(multisession, workers = parallel::detectCores() - 1)
+
+# I let this run for 3 days on my laptop and had to cancel before it finished.
+results <- future_lapply(species, function(sp) {
+  # make sure packages are available to parallel workers
+  library(VSURF)
+  library(randomForest)
+  # y is selected species
+  y <- siteDetections_foliarTraits_BioCube[[sp]] 
+  if (var(y) == 0) return(NULL)
+  # x is set of variables
+  do.call(rbind, lapply(names(X_list), function(grp) {
+    x <- st_drop_geometry(X_list[[grp]])
+    # VSURF var selection
+    do.call(rbind, lapply(1:10, function(i) {
+      vs <- VSURF(x, y, parallel=FALSE)  # IMPORTANT: disable nested parallel
+      selVars <- names(x)[vs$varselect.pred]
+      if (length(selVars) == 0) return(NULL)
+      # run random forest
+      rf <- randomForest(x[, selVars, drop=FALSE], y)
+      R2 <- 1 - mean((rf$y - rf$predicted)^2) / var(rf$y)
+      # save results to dataframa
+      data.frame(species=sp, variableGroup=grp, R2=R2, iteration=i)
+    }))
+  }))
+})
+
+speciesDependence <- do.call(rbind, results)
+
+# turn off parallel processing
+plan(sequential)
 
 
