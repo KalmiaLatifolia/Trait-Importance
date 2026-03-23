@@ -15,8 +15,11 @@ library(readxl)
 library(basemaps)
 library(ggspatial)
 library(randomForest)
-library(VSURF)
+library(xgboost)
+library(SHAPforxgboost)
+library(future)
 library(future.apply)
+library(progressr)
 
 # set working directory
 
@@ -34,7 +37,7 @@ setwd("/Users/lauraberman/Library/CloudStorage/OneDrive-NationalUniversityofSing
 # 5) Get biocube variables - 281
 # 6) Exclude duplicate/no variance variables - 331
 # 7) Exclude rarely detected species - 385
-# 8) Exclude NA variables + sites - 399
+# 8) Exclude NA variables + sites - 405
 
 # Create Figures ---------------------------------------------------------------
 # 9) Make a nice map (Figure 1) - 433
@@ -426,12 +429,17 @@ x <- as.data.frame(rowSums(is.na(siteDetections_foliarTraits_BioCube)))
 # Remove rows that still have NA values ----------------------------------------
 siteDetections_foliarTraits_BioCube <- siteDetections_foliarTraits_BioCube[complete.cases(st_drop_geometry(siteDetections_foliarTraits_BioCube)), ]
 
-# siteDetections_foliarTraits_BioCube has 553 obs of 237 vars
+# Fabian suggests excluding Kling layers ---------------------------------------
+siteDetections_foliarTraits_BioCube$CA_Diversity_Kling_et_al_2018_EndemicSpecies_PD <- NULL
+siteDetections_foliarTraits_BioCube$CA_Diversity_Kling_et_al_2018_Species_Diversity <- NULL
+siteDetections_foliarTraits_BioCube$CA_Diversity_Kling_et_al_2018_Species_Endemism <- NULL
+
+# siteDetections_foliarTraits_BioCube has 553 obs of 234 vars
 
 # save it ----------------------------------------------------------------------
 write_rds(siteDetections_foliarTraits_BioCube, "data/siteDetections_foliarTraits_BioCube_20260320.rds")
 write_csv(siteDetections_foliarTraits_BioCube, "data/siteDetections_foliarTraits_BioCube_20260320.csv")
-
+# siteDetections_foliarTraits_BioCube <- readRDS("data/siteDetections_foliarTraits_BioCube_20260320.rds")
 
 ################################################################################
 #  make a nice map
@@ -494,8 +502,9 @@ siteDetections_foliarTraits_BioCube <- st_drop_geometry(siteDetections_foliarTra
 ################################################################################
 
 # set up variable groups -------------------------------------------------------
+names(siteDetections_foliarTraits_BioCube)
 species = siteDetections_foliarTraits_BioCube[4:97]
-spatVars  = siteDetections_foliarTraits_BioCube[98:237]
+spatVars  = siteDetections_foliarTraits_BioCube[98:234]
 
 # NFPD function ----------------------------------------------------------------
 FPD <- function(species_col) {species_col / max(species_col)}
@@ -514,10 +523,10 @@ cors_df <- as.data.frame(spTraitCors) %>%
 # hclust rows and columns ------------------------------------------------------
 
 row_hc <- hclust(as.dist(1 - cor(t(spTraitCors), method = "spearman")), 
-                  method = "average")$order
+                  method = "centroid")$order
 
 col_hc <- hclust(as.dist(1 - cor(spTraitCors, method = "spearman")),
-                  method = "average")$order
+                  method = "centroid")$order
 
 # Tidy variable labels ---------------------------------------------------------
 
@@ -547,7 +556,7 @@ ggplot(cors_df,
   scale_x_discrete(labels = tidy$Label[match(colnames(spTraitCors)[col_hc], tidy$Variable)])
 
 # save it
-ggsave("figures/Correlation_Matrix.pdf", height=10, width=15)
+ggsave("figures/Correlation_Matrix1.pdf", height=10, width=15)
 
 
 
@@ -559,22 +568,14 @@ ggsave("figures/Correlation_Matrix.pdf", height=10, width=15)
 ################################################################################
 ################################################################################
 
-
 ################################################################################
-# Calculate species dependence (how important are var groups for each species?)
+# run XGBoost models
 ################################################################################
-
-# load tidy names --------------------------------------------------------------
-tidy <- read_excel("/Users/lauraberman/Library/CloudStorage/OneDrive-NationalUniversityofSingapore/Documents/Wisconsin/Townsend Lab/Trait importance/TableS1_Biocube_var_description.xlsx",
-                   range = cell_cols(1:4))
-
-# only keep current variables --------------------------------------------------
-tidy <- tidy[tidy$Variable %in% colnames(siteDetections_foliarTraits_BioCube), ]
 
 # name variable grouping -------------------------------------------------------
 names(siteDetections_foliarTraits_BioCube)
 species <- colnames(siteDetections_foliarTraits_BioCube)[4:97]
-varGroups <- list(
+varSets <- list(
   spatVars  = tidy$Variable,
   notTraits = tidy$Variable[tidy$Category != "Traits"],
   notDist   = tidy$Variable[tidy$Category != "Disturbance"],
@@ -584,40 +585,121 @@ varGroups <- list(
   notTerr   = tidy$Variable[tidy$Category != "Terrain"]
 )
 
-# Build a list of data frames, one per variable group --------------------------
-X_list <- lapply(varGroups, function(cols) siteDetections_foliarTraits_BioCube[, cols, drop=FALSE])
+# make sure all column names in varSets match real variables
+varSets <- lapply(varSets, function(x) x[x %in% colnames(siteDetections_foliarTraits_BioCube)])
 
-# set up parallel processing ---------------------------------------------------
-plan(multisession, workers = parallel::detectCores() - 1)
 
-# I let this run for 3 days on my laptop and had to cancel before it finished.
-results <- future_lapply(species, function(sp) {
-  # make sure packages are available to parallel workers
-  library(VSURF)
-  library(randomForest)
-  # y is selected species
-  y <- siteDetections_foliarTraits_BioCube[[sp]] 
-  if (var(y) == 0) return(NULL)
-  # x is set of variables
-  do.call(rbind, lapply(names(X_list), function(grp) {
-    x <- st_drop_geometry(X_list[[grp]])
-    # VSURF var selection
-    do.call(rbind, lapply(1:10, function(i) {
-      vs <- VSURF(x, y, parallel=FALSE)  # IMPORTANT: disable nested parallel
-      selVars <- names(x)[vs$varselect.pred]
-      if (length(selVars) == 0) return(NULL)
-      # run random forest
-      rf <- randomForest(x[, selVars, drop=FALSE], y)
-      R2 <- 1 - mean((rf$y - rf$predicted)^2) / var(rf$y)
-      # save results to dataframa
-      data.frame(species=sp, variableGroup=grp, R2=R2, iteration=i)
-    }))
-  }))
+# xgboost with SHAP and iterations in parallel -------------------(as yet unrun)
+# ------------------------------------------------------------------------------
+
+# Use multiple cores
+plan(multisession, workers = parallel::detectCores() - 1)  
+
+# list parallelizable tasks (6580)
+tasks <- expand.grid(
+  varSet = names(varSets),
+  species_i = seq_along(species),
+  iter = 1:10
+)
+
+# make a fxn -------------------------------------------------------------------
+run_task <- function(vs, i, iter) {
+  set.seed(123 + iter)
+  
+  # choose variable set
+  spatVars <- siteDetections_foliarTraits_BioCube[, varSets[[vs]], drop = FALSE]
+  
+  # choose species
+  y <- NFPD(siteDetections_foliarTraits_BioCube[[species[i]]])
+  
+  # split into train and test sets
+  n <- nrow(spatVars)
+  train_idx <- sample(n, floor(0.8*n))
+  test_idx  <- setdiff(seq_len(n), train_idx)
+  
+  X_train <- spatVars[train_idx, ]
+  y_train <- y[train_idx]
+  X_test  <- spatVars[test_idx, ]
+  y_test  <- y[test_idx]
+  
+  dtrain <- xgb.DMatrix(as.matrix(X_train), label = y_train)
+  dtest  <- xgb.DMatrix(as.matrix(X_test),  label = y_test)
+  
+  # set xgboost parameters
+  params <- list(objective = "reg:squarederror", max_depth = 6, eta = 0.1)
+  
+  # run 5-fold cross validation (find best number of iterations)
+  cv <- xgb.cv(params = params, data = dtrain,
+               nrounds = 100, nfold = 5, metrics = "rmse",
+               verbose = 0, early_stopping_rounds = 10)
+  
+  # run xgboost
+  xgb_model <- xgb.train(params = params, data = dtrain, nrounds = cv$early_stop$best_iteration)
+  
+  # predict on test data
+  pred <- predict(xgb_model, dtest)
+  
+  # calculate R2 of prediction vs test data
+  R2_test  <- 1 - sum((y_test  - pred)^2) / sum((y_test  - mean(y_test))^2)
+  R2_train <- 1 - sum((y_train - predict(xgb_model, dtrain))^2) / sum((y_train - mean(y_train))^2)
+  
+  # calculate variable importance
+  imp <- xgb.importance(colnames(spatVars), model = xgb_model)
+  imp$species   <- species[i]
+  imp$varSet    <- vs
+  imp$iteration <- iter
+  
+  # calculate SHAP importance
+  shap <- shap.values(xgb_model, X_train = X_test)
+  shap_importance <- data.frame(
+    Feature = names(shap$mean_shap_score),
+    SHAP_importance = shap$mean_shap_score
+  )
+  
+  # keep importance data
+  imp <- merge(imp, shap_importance)
+  
+  # keep model data
+  model_row <- data.frame(
+    species = species[i],
+    varSet = names(varSets)[vs],
+    iteration = iter,
+    zeros = sum(y == 0, na.rm = TRUE),
+    best_nrounds_cv = cv$early_stop$best_iteration,
+    R2_test = R2_test,
+    R2_train = R2_train
+  )
+  
+  list(model = model_row, importance = imp)
+}
+
+
+# run the fxn ------------------------------------------------------------------
+handlers(global = TRUE) 
+
+with_progress({
+  p <- progressor(along = seq_len(nrow(tasks)))
+  
+  results <- future_lapply(
+    seq_len(nrow(tasks)),
+    function(k) {
+      res <- run_task(
+        vs   = tasks$varSet[k],
+        i    = tasks$species_i[k],
+        iter = tasks$iter[k]
+      )
+      p(sprintf("Finished task %d", k))
+      res
+    }
+  )
 })
 
-speciesDependence <- do.call(rbind, results)
-
-# turn off parallel processing
+# turn off parallel processing 
 plan(sequential)
+
+# combine outputs --------------------------------------------------------------
+xgb_modelParameters <- do.call(rbind, lapply(results, `[[`, "model"))
+xgb_variableImportance <- do.call(rbind, lapply(results, `[[`, "importance"))
+
 
 
