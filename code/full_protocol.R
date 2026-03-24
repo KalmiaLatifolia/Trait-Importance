@@ -641,7 +641,9 @@ run_task <- function(vs, i, iter) {
   
   # calculate R2 of prediction vs test data
   R2_test  <- 1 - sum((y_test  - pred)^2) / sum((y_test  - mean(y_test))^2)
+  RMSE_test <- sqrt(mean((pred - y_test)^2))
   R2_train <- 1 - sum((y_train - predict(xgb_model, dtrain))^2) / sum((y_train - mean(y_train))^2)
+  RMSE_train <- sqrt(mean((predict(xgb_model, dtrain) - y_train)^2))
   
   # calculate variable importance
   imp <- xgb.importance(colnames(spatVars), model = xgb_model)
@@ -701,5 +703,7 @@ plan(sequential)
 xgb_modelParameters <- do.call(rbind, lapply(results, `[[`, "model"))
 xgb_variableImportance <- do.call(rbind, lapply(results, `[[`, "importance"))
 
+# 10:21 am start
+# 10:26 @ 20%
 
 
