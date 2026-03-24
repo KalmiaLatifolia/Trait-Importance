@@ -669,14 +669,16 @@ run_task <- function(vs, i, iter) {
     zeros = sum(y == 0, na.rm = TRUE),
     best_nrounds_cv = cv$early_stop$best_iteration,
     R2_test = R2_test,
-    R2_train = R2_train
+    RMSE_test = RMSE_test,
+    R2_train = R2_train,
+    RMSE_train = RMSE_train
   )
   
   list(model = model_row, importance = imp)
 }
 
 
-# run the fxn ------------------------------------------------------------------
+# run the fxn -------------------------------------------------------- (~30 min)
 handlers(global = TRUE) 
 
 with_progress({
@@ -703,7 +705,6 @@ plan(sequential)
 xgb_modelParameters <- do.call(rbind, lapply(results, `[[`, "model"))
 xgb_variableImportance <- do.call(rbind, lapply(results, `[[`, "importance"))
 
-# 10:21 am start
-# 10:26 @ 20%
+
 
 
