@@ -20,6 +20,7 @@ library(SHAPforxgboost)
 library(future)
 library(future.apply)
 library(progressr)
+library(ggpubr)
 
 # set working directory
 
@@ -560,14 +561,6 @@ ggsave("figures/Correlation_Matrix1.pdf", height=10, width=15)
 
 
 
-### LEFT OFF HERE - MARCH 20TH 2026 
-
-################################################################################
-################################################################################
-################################################################################
-################################################################################
-################################################################################
-
 ################################################################################
 # run XGBoost models
 ################################################################################
@@ -589,7 +582,7 @@ varSets <- list(
 varSets <- lapply(varSets, function(x) x[x %in% colnames(siteDetections_foliarTraits_BioCube)])
 
 
-# xgboost with SHAP and iterations in parallel -------------------(as yet unrun)
+# xgboost with SHAP and iterations in parallel ---------------------------------
 # ------------------------------------------------------------------------------
 
 # Use multiple cores
@@ -599,7 +592,7 @@ plan(multisession, workers = parallel::detectCores() - 1)
 tasks <- expand.grid(
   varSet = names(varSets),
   species_i = seq_along(species),
-  iter = 1:10
+  iter = 1:100
 )
 
 # make a fxn -------------------------------------------------------------------
@@ -678,7 +671,7 @@ run_task <- function(vs, i, iter) {
 }
 
 
-# run the fxn -------------------------------------------------------- (~30 min)
+# run the fxn -------------------------------------- (~30 min for 10 iterations)
 handlers(global = TRUE) 
 
 with_progress({
@@ -706,12 +699,144 @@ xgb_modelParameters <- do.call(rbind, lapply(results, `[[`, "model"))
 xgb_variableImportance <- do.call(rbind, lapply(results, `[[`, "importance"))
 
 # save it ----------------------------------------------------------------------
-write_rds(xgb_modelParameters, "data/xgb_modelParameters_20260324.rds")
-write_csv(xgb_modelParameters, "data/xgb_modelParameters_20260324.csv")
+write_rds(xgb_modelParameters, "data/xgb_modelParameters_20260325.rds")
+write_csv(xgb_modelParameters, "data/xgb_modelParameters_20260325.csv")
 
-write_rds(xgb_variableImportance, "data/xgb_variableImportance_20260324.rds")
-write_csv(xgb_variableImportance, "data/xgb_variableImportance_20260324.csv")
+write_rds(xgb_variableImportance, "data/xgb_variableImportance_20260325.rds")
+write_csv(xgb_variableImportance, "data/xgb_variableImportance_20260325.csv")
 
+
+### LEFT OFF HERE - MARCH 25TH 2026 
+
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+
+
+################################################################################
+# which species R2 significantly improves with each category? (Figure 3)
+################################################################################
+
+# here is the varsets chunk again as a reminder
+varSets <- list(
+  spatVars  = tidy$Variable,
+  notTraits = tidy$Variable[tidy$Category != "Traits"],
+  notDist   = tidy$Variable[tidy$Category != "Disturbance"],
+  notClim   = tidy$Variable[tidy$Category != "Climate"],
+  notStr    = tidy$Variable[tidy$Category != "Structure"],
+  notPheno  = tidy$Variable[tidy$Category != "Phenology"],
+  notTerr   = tidy$Variable[tidy$Category != "Terrain"]
+)
+varSets <- lapply(varSets, function(x) x[x %in% colnames(siteDetections_foliarTraits_BioCube)])
+
+# run t.tests for each category
+cat_ttest <- xgb_modelParameters %>%
+  group_by(species) %>%
+  summarise(notTraits = t.test(R2_test[varSet=="spatVars"], R2_test[varSet=="notTraits"], alternative="greater")$p.value,
+            notClim = t.test(R2_test[varSet=="spatVars"], R2_test[varSet=="notClim"], alternative="greater")$p.value,
+            notStr = t.test(R2_test[varSet=="spatVars"], R2_test[varSet=="notStr"], alternative="greater")$p.value,
+            notDist = t.test(R2_test[varSet=="spatVars"], R2_test[varSet=="notDist"], alternative="greater")$p.value,
+            notPheno = t.test(R2_test[varSet=="spatVars"], R2_test[varSet=="notPheno"], alternative="greater")$p.value,
+            notTerr = t.test(R2_test[varSet=="spatVars"], R2_test[varSet=="notTerr"], alternative="greater")$p.value,
+            R2 = mean(R2_test))
+
+# exclude species with R2 < 0 
+cat_ttest <- cat_ttest[cat_ttest$R2 > 0, ]
+
+
+# plot it
+
+ssp <- cat_ttest$species[cat_ttest$notTraits < 0.05]
+temp <- subset(xgb_modelParameters, species %in% ssp)
+temp <- subset(temp, temp$varSet=="spatVars" | temp$varSet=="notTraits")
+temp$varSet[temp$varSet=="notTraits"] <- "Without Foliar Traits"
+temp$varSet[temp$varSet=="spatVars"] <- "With Foliar Traits"
+
+p1 <- ggplot(temp, aes(x=R2_test, y=reorder(species, R2_test), color=varSet, fill=varSet)) +
+  geom_boxplot() +
+  scale_color_manual(values = c("#842B3B", "black")) +
+  scale_fill_manual(values = c("#aa384c", "grey30")) +
+  xlim(-0.25,0.9) +
+  theme_minimal() +
+  theme(legend.title=element_blank()) +
+  xlab("Best Model R2") +
+  ylab("")
+
+
+ssp <- cat_ttest$species[cat_ttest$notClim < 0.05]
+temp <- subset(xgb_modelParameters, species %in% ssp)
+temp <- subset(temp, temp$varSet=="spatVars" | temp$varSet=="notClim")
+temp$varSet[temp$varSet=="notClim"] <- "Without Climate"
+temp$varSet[temp$varSet=="spatVars"] <- "With Climate"
+
+p2 <- ggplot(temp, aes(x=R2_test, y=reorder(species, R2_test), color=varSet, fill=varSet)) +
+  geom_boxplot() +
+  scale_color_manual(values = c("#70A4AF", "black")) +
+  scale_fill_manual(values = c("#91b9c1", "grey30")) +
+  xlim(-0.25,0.9) +
+  theme_minimal() +
+  theme(legend.title=element_blank()) +
+  xlab("Best Model R2") +
+  ylab("")
+
+
+ssp <- cat_ttest$species[cat_ttest$notStr < 0.05]
+temp <- subset(xgb_modelParameters, species %in% ssp)
+temp <- subset(temp, temp$varSet=="spatVars" | temp$varSet=="notStr")
+temp$varSet[temp$varSet=="notStr"] <- "Without Forest Structure"
+temp$varSet[temp$varSet=="spatVars"] <- "With Forest Structure"
+
+p3 <- ggplot(temp, aes(x=R2_test, y=reorder(species, R2_test), color=varSet, fill=varSet)) +
+  geom_boxplot() +
+  scale_color_manual(values = c("#FDC71B", "black")) +
+  scale_fill_manual(values = c("#FFE090", "grey30")) +
+  xlim(-0.25,0.9) +
+  theme_minimal() +
+  theme(legend.title=element_blank()) +
+  xlab("Best Model R2") +
+  ylab("")
+
+
+ssp <- cat_ttest$species[cat_ttest$notPheno < 0.05]
+temp <- subset(xgb_modelParameters, species %in% ssp)
+temp <- subset(temp, temp$varSet=="spatVars" | temp$varSet=="notPheno")
+temp$varSet[temp$varSet=="notPheno"] <- "Without Phenology"
+temp$varSet[temp$varSet=="spatVars"] <- "With Phenology"
+
+p4 <- ggplot(temp, aes(x=R2_test, y=reorder(species, R2_test), color=varSet, fill=varSet)) +
+  geom_boxplot() +
+  scale_color_manual(values = c("#D97C55", "black")) +
+  scale_fill_manual(values = c("#e29c7f", "grey30")) +
+  xlim(-0.25,0.9) +
+  theme_minimal() +
+  theme(legend.title=element_blank()) +
+  xlab("Best Model R2") +
+  ylab("")
+
+
+ssp <- cat_ttest$species[cat_ttest$notTerr < 0.05]
+temp <- subset(xgb_modelParameters, species %in% ssp)
+temp <- subset(temp, temp$varSet=="spatVars" | temp$varSet=="notTerr")
+temp$varSet[temp$varSet=="notTerr"] <- "Without Terrain"
+temp$varSet[temp$varSet=="spatVars"] <- "With Terrain"
+
+p5 <- ggplot(temp, aes(x=R2_test, y=reorder(species, R2_test), color=varSet, fill=varSet)) +
+  geom_boxplot() +
+  scale_color_manual(values = c("#A8BBA3", "black")) +
+  scale_fill_manual(values = c("#c4d1c0", "grey30")) +
+  xlim(-0.25,0.9) +
+  theme_minimal() +
+  theme(legend.title=element_blank()) +
+  xlab("Best Model R2") +
+  ylab("")
+
+annotate_figure(
+  ggarrange(p1, p3, p2, ncol = 1, nrow = 3, heights = c(6, 4, 2), align="hv"),
+  left = text_grob("Species with significant improvement", rot = 90, size = 14, vjust = 1))
+
+ggsave("SpeciesBestR2_20260325.pdf", height=10, width=10)
 
 
 
