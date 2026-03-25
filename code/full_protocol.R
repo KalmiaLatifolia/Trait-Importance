@@ -344,7 +344,7 @@ write_csv(siteDetections_foliarTraits_BioCube, "data/siteDetections_foliarTraits
 # correlation matrix of variables ----------------------------------------------
 cor_matrix <- cor(st_drop_geometry(siteDetections_foliarTraits_BioCube[-1]), use = "complete.obs")
 
-# These variables have only NA values in the cor matrix and should be dropped:
+# These variables have too many NA values in the cor matrix and should be dropped:
 sum(siteDetections_foliarTraits_BioCube$`Energy production cover` != 0, na.rm = TRUE)
 # Wild Turkey - only 13 non-zero values
 # Tree Swallow - only 2 non-zero values
@@ -498,7 +498,7 @@ siteDetections_foliarTraits_BioCube <- st_drop_geometry(siteDetections_foliarTra
 
 
 ################################################################################
-# Make a correlation matrix plot (Figure 5)
+# Make a correlation matrix plot (Figure 2)
 ################################################################################
 
 # set up variable groups -------------------------------------------------------
@@ -704,6 +704,13 @@ plan(sequential)
 # combine outputs --------------------------------------------------------------
 xgb_modelParameters <- do.call(rbind, lapply(results, `[[`, "model"))
 xgb_variableImportance <- do.call(rbind, lapply(results, `[[`, "importance"))
+
+# save it ----------------------------------------------------------------------
+write_rds(xgb_modelParameters, "data/xgb_modelParameters_20260324.rds")
+write_csv(xgb_modelParameters, "data/xgb_modelParameters_20260324.csv")
+
+write_rds(xgb_variableImportance, "data/xgb_variableImportance_20260324.rds")
+write_csv(xgb_variableImportance, "data/xgb_variableImportance_20260324.csv")
 
 
 
