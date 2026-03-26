@@ -706,15 +706,6 @@ write_rds(xgb_variableImportance, "data/xgb_variableImportance_20260325.rds")
 write_csv(xgb_variableImportance, "data/xgb_variableImportance_20260325.csv")
 
 
-### LEFT OFF HERE - MARCH 25TH 2026 
-
-################################################################################
-################################################################################
-################################################################################
-################################################################################
-################################################################################
-
-
 ################################################################################
 # which species R2 significantly improves with each category? (Figure 3)
 ################################################################################
@@ -760,24 +751,7 @@ p1 <- ggplot(temp, aes(x=R2_test, y=reorder(species, R2_test), color=varSet, fil
   scale_fill_manual(values = c("#aa384c", "grey30")) +
   xlim(-0.25,0.9) +
   theme_minimal() +
-  theme(legend.title=element_blank()) +
-  xlab("Best Model R2") +
-  ylab("")
-
-
-ssp <- cat_ttest$species[cat_ttest$notClim < 0.05]
-temp <- subset(xgb_modelParameters, species %in% ssp)
-temp <- subset(temp, temp$varSet=="spatVars" | temp$varSet=="notClim")
-temp$varSet[temp$varSet=="notClim"] <- "Without Climate"
-temp$varSet[temp$varSet=="spatVars"] <- "With Climate"
-
-p2 <- ggplot(temp, aes(x=R2_test, y=reorder(species, R2_test), color=varSet, fill=varSet)) +
-  geom_boxplot() +
-  scale_color_manual(values = c("#70A4AF", "black")) +
-  scale_fill_manual(values = c("#91b9c1", "grey30")) +
-  xlim(-0.25,0.9) +
-  theme_minimal() +
-  theme(legend.title=element_blank()) +
+  theme(legend.title=element_blank(), legend.position = "bottom") +
   xlab("Best Model R2") +
   ylab("")
 
@@ -788,13 +762,30 @@ temp <- subset(temp, temp$varSet=="spatVars" | temp$varSet=="notStr")
 temp$varSet[temp$varSet=="notStr"] <- "Without Forest Structure"
 temp$varSet[temp$varSet=="spatVars"] <- "With Forest Structure"
 
-p3 <- ggplot(temp, aes(x=R2_test, y=reorder(species, R2_test), color=varSet, fill=varSet)) +
+p2 <- ggplot(temp, aes(x=R2_test, y=reorder(species, R2_test), color=varSet, fill=varSet)) +
   geom_boxplot() +
   scale_color_manual(values = c("#FDC71B", "black")) +
   scale_fill_manual(values = c("#FFE090", "grey30")) +
   xlim(-0.25,0.9) +
   theme_minimal() +
-  theme(legend.title=element_blank()) +
+  theme(legend.title=element_blank(), legend.position = "bottom") +
+  xlab("Best Model R2") +
+  ylab("")
+
+
+ssp <- cat_ttest$species[cat_ttest$notClim < 0.05]
+temp <- subset(xgb_modelParameters, species %in% ssp)
+temp <- subset(temp, temp$varSet=="spatVars" | temp$varSet=="notClim")
+temp$varSet[temp$varSet=="notClim"] <- "Without Climate"
+temp$varSet[temp$varSet=="spatVars"] <- "With Climate"
+
+p3 <- ggplot(temp, aes(x=R2_test, y=reorder(species, R2_test), color=varSet, fill=varSet)) +
+  geom_boxplot() +
+  scale_color_manual(values = c("#70A4AF", "black")) +
+  scale_fill_manual(values = c("#91b9c1", "grey30")) +
+  xlim(-0.25,0.9) +
+  theme_minimal() +
+  theme(legend.title=element_blank(), legend.position = "bottom") +
   xlab("Best Model R2") +
   ylab("")
 
@@ -811,7 +802,7 @@ p4 <- ggplot(temp, aes(x=R2_test, y=reorder(species, R2_test), color=varSet, fil
   scale_fill_manual(values = c("#e29c7f", "grey30")) +
   xlim(-0.25,0.9) +
   theme_minimal() +
-  theme(legend.title=element_blank()) +
+  theme(legend.title=element_blank(), legend.position = "bottom") +
   xlab("Best Model R2") +
   ylab("")
 
@@ -828,15 +819,212 @@ p5 <- ggplot(temp, aes(x=R2_test, y=reorder(species, R2_test), color=varSet, fil
   scale_fill_manual(values = c("#c4d1c0", "grey30")) +
   xlim(-0.25,0.9) +
   theme_minimal() +
-  theme(legend.title=element_blank()) +
+  theme(legend.title=element_blank(), legend.position = "bottom") +
+  xlab("Best Model R2") +
+  ylab("")
+
+ssp <- cat_ttest$species[cat_ttest$notDist < 0.05]
+temp <- subset(xgb_modelParameters, species %in% ssp)
+temp <- subset(temp, temp$varSet=="spatVars" | temp$varSet=="notDist")
+temp$varSet[temp$varSet=="notDist"] <- "Without Disturbance"
+temp$varSet[temp$varSet=="spatVars"] <- "With Disturbance"
+
+p6 <- ggplot(temp, aes(x=R2_test, y=reorder(species, R2_test), color=varSet, fill=varSet)) +
+  geom_boxplot() +
+  scale_color_manual(values = c("#7C4584", "black")) +
+  scale_fill_manual(values = c("#AC86B0", "grey30")) +
+  xlim(-0.25,0.9) +
+  theme_minimal() +
+  theme(legend.title=element_blank(), legend.position = "bottom") +
   xlab("Best Model R2") +
   ylab("")
 
 annotate_figure(
-  ggarrange(p1, p3, p2, ncol = 1, nrow = 3, heights = c(6, 4, 2), align="hv"),
+  ggarrange(p1, p2, p3, p4, p5, p6, ncol = 3, nrow = 2, heights = c(4, 1), align="hv"),
   left = text_grob("Species with significant improvement", rot = 90, size = 14, vjust = 1))
 
-ggsave("SpeciesBestR2_20260325.pdf", height=10, width=10)
+ggsave("SpeciesBestR2_20260326.pdf", height=10, width=15)
+
+
+
+
+################################################################################
+# which species RMSE significantly improves with each category? (Figure 3 alt)
+################################################################################
+
+# run t.tests for each category
+cat_ttest <- xgb_modelParameters %>%
+  group_by(species) %>%
+  summarise(notTraits = t.test(RMSE_test[varSet=="spatVars"], RMSE_test[varSet=="notTraits"], alternative="less")$p.value,
+            notClim = t.test(RMSE_test[varSet=="spatVars"], RMSE_test[varSet=="notClim"], alternative="less")$p.value,
+            notStr = t.test(RMSE_test[varSet=="spatVars"], RMSE_test[varSet=="notStr"], alternative="less")$p.value,
+            notDist = t.test(RMSE_test[varSet=="spatVars"], RMSE_test[varSet=="notDist"], alternative="less")$p.value,
+            notPheno = t.test(RMSE_test[varSet=="spatVars"], RMSE_test[varSet=="notPheno"], alternative="less")$p.value,
+            notTerr = t.test(RMSE_test[varSet=="spatVars"], RMSE_test[varSet=="notTerr"], alternative="less")$p.value,
+            RMSE = mean(RMSE_test))
+
+# plot it
+
+ssp <- cat_ttest$species[cat_ttest$notTraits < 0.05]
+temp <- subset(xgb_modelParameters, species %in% ssp)
+temp <- subset(temp, temp$varSet=="spatVars" | temp$varSet=="notTraits")
+temp$varSet[temp$varSet=="notTraits"] <- "Without Foliar Traits"
+temp$varSet[temp$varSet=="spatVars"] <- "With Foliar Traits"
+
+p1 <- ggplot(temp, aes(x=RMSE_test, y=reorder(species, RMSE_test), color=varSet, fill=varSet)) +
+  geom_boxplot() +
+  scale_color_manual(values = c("#842B3B", "black")) +
+  scale_fill_manual(values = c("#aa384c", "grey30")) +
+  xlim(0.05, 0.25) +
+  theme_minimal() +
+  theme(legend.title=element_blank(), legend.position = "bottom") +
+  xlab("Best Model RMSE") +
+  ylab("")
+
+
+ssp <- cat_ttest$species[cat_ttest$notStr < 0.05]
+temp <- subset(xgb_modelParameters, species %in% ssp)
+temp <- subset(temp, temp$varSet=="spatVars" | temp$varSet=="notStr")
+temp$varSet[temp$varSet=="notStr"] <- "Without Forest Structure"
+temp$varSet[temp$varSet=="spatVars"] <- "With Forest Structure"
+
+p2 <- ggplot(temp, aes(x=RMSE_test, y=reorder(species, RMSE_test), color=varSet, fill=varSet)) +
+  geom_boxplot() +
+  scale_color_manual(values = c("#FDC71B", "black")) +
+  scale_fill_manual(values = c("#FFE090", "grey30")) +
+  xlim(0.05, 0.25) +
+  theme_minimal() +
+  theme(legend.title=element_blank(), legend.position = "bottom") +
+  xlab("Best Model RMSE") +
+  ylab("")
+
+
+ssp <- cat_ttest$species[cat_ttest$notClim < 0.05]
+temp <- subset(xgb_modelParameters, species %in% ssp)
+temp <- subset(temp, temp$varSet=="spatVars" | temp$varSet=="notClim")
+temp$varSet[temp$varSet=="notClim"] <- "Without Climate"
+temp$varSet[temp$varSet=="spatVars"] <- "With Climate"
+
+p3 <- ggplot(temp, aes(x=RMSE_test, y=reorder(species, RMSE_test), color=varSet, fill=varSet)) +
+  geom_boxplot() +
+  scale_color_manual(values = c("#70A4AF", "black")) +
+  scale_fill_manual(values = c("#91b9c1", "grey30")) +
+  xlim(0.05, 0.25) +
+  theme_minimal() +
+  theme(legend.title=element_blank(), legend.position = "bottom") +
+  xlab("Best Model RMSE") +
+  ylab("")
+
+
+ssp <- cat_ttest$species[cat_ttest$notPheno < 0.05]
+temp <- subset(xgb_modelParameters, species %in% ssp)
+temp <- subset(temp, temp$varSet=="spatVars" | temp$varSet=="notPheno")
+temp$varSet[temp$varSet=="notPheno"] <- "Without Phenology"
+temp$varSet[temp$varSet=="spatVars"] <- "With Phenology"
+
+p4 <- ggplot(temp, aes(x=RMSE_test, y=reorder(species, RMSE_test), color=varSet, fill=varSet)) +
+  geom_boxplot() +
+  scale_color_manual(values = c("#D97C55", "black")) +
+  scale_fill_manual(values = c("#e29c7f", "grey30")) +
+  xlim(0.05, 0.25) +
+  theme_minimal() +
+  theme(legend.title=element_blank(), legend.position = "bottom") +
+  xlab("Best Model RMSE") +
+  ylab("")
+
+
+ssp <- cat_ttest$species[cat_ttest$notTerr < 0.05]
+temp <- subset(xgb_modelParameters, species %in% ssp)
+temp <- subset(temp, temp$varSet=="spatVars" | temp$varSet=="notTerr")
+temp$varSet[temp$varSet=="notTerr"] <- "Without Terrain"
+temp$varSet[temp$varSet=="spatVars"] <- "With Terrain"
+
+p5 <- ggplot(temp, aes(x=RMSE_test, y=reorder(species, RMSE_test), color=varSet, fill=varSet)) +
+  geom_boxplot() +
+  scale_color_manual(values = c("#A8BBA3", "black")) +
+  scale_fill_manual(values = c("#c4d1c0", "grey30")) +
+  xlim(0.05, 0.25) +
+  theme_minimal() +
+  theme(legend.title=element_blank(), legend.position = "bottom") +
+  xlab("Best Model RMSE") +
+  ylab("")
+
+ssp <- cat_ttest$species[cat_ttest$notDist < 0.05]
+temp <- subset(xgb_modelParameters, species %in% ssp)
+temp <- subset(temp, temp$varSet=="spatVars" | temp$varSet=="notDist")
+temp$varSet[temp$varSet=="notDist"] <- "Without Disturbance"
+temp$varSet[temp$varSet=="spatVars"] <- "With Disturbance"
+
+p6 <- ggplot(temp, aes(x=RMSE_test, y=reorder(species, RMSE_test), color=varSet, fill=varSet)) +
+  geom_boxplot() +
+  scale_color_manual(values = c("#7C4584", "black")) +
+  scale_fill_manual(values = c("#AC86B0", "grey30")) +
+  xlim(0.05, 0.25) +
+  theme_minimal() +
+  theme(legend.title=element_blank(), legend.position = "bottom") +
+  xlab("Best Model RMSE") +
+  ylab("")
+
+annotate_figure(
+  ggarrange(p1, p2, p3, p4, p5, p6, ncol = 3, nrow = 2, heights = c(4, 1), align="hv"),
+  left = text_grob("Species with significant improvement", rot = 90, size = 14, vjust = 1))
+
+ggsave("SpeciesBestRMSE_20260326.pdf", height=10, width=15)
+
+
+
+################################################################################
+# Heat map - variable importance
+################################################################################
+
+
+# average across iterations ----------------------------------------------------
+
+temp <- xgb_variableImportance %>%
+  subset(varSet == "spatVars") %>%
+  group_by(Feature, species) %>%
+  summarise(SHAP_importance = mean(SHAP_importance, na.rm=TRUE), .groups="drop") %>%
+  rename(Variable = Feature) %>%
+  left_join(tidy, by="Variable")
+
+# order y (variables) by total importance --------------------------------------
+var_order <- temp %>% 
+  group_by(Label) %>% 
+  summarise(total = sum(SHAP_importance, na.rm=TRUE), .groups="drop") %>% 
+  arrange(total) %>% 
+  pull(Label)
+
+# order x (species) by total importance ----------------------------------------
+sp_order <- temp %>% 
+  group_by(species) %>% 
+  summarise(total = sum(SHAP_importance, na.rm=TRUE), .groups="drop") %>% 
+  arrange(desc(total)) %>% 
+  pull(species)
+
+# plot it ----------------------------------------------------------------------
+
+ggplot(temp, aes(x = factor(species, levels = sp_order), 
+                 y = factor(Label, levels = var_order), 
+                 fill = SHAP_importance)) +
+  geom_tile() +
+  scale_fill_continuous(palette = c("white", "#FC9272", "#DE2D26"), na.value = "white") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(size=6, angle=45, hjust=1),
+        axis.text.y = element_text(size = 6, colour = tidy$labelColor[match(var_order, tidy$Label)])) +
+  ylab("Variable") +
+  xlab("Species")
+
+ggsave("SHAPimportance_20260329.pdf", height=11, width=11)
+
+
+### LEFT OFF HERE - MARCH 26TH 2026 
+
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+################################################################################
+
 
 
 
