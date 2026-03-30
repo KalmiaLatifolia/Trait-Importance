@@ -704,7 +704,7 @@ write_csv(xgb_modelParameters, "data/xgb_modelParameters_20260325.csv")
 
 write_rds(xgb_variableImportance, "data/xgb_variableImportance_20260325.rds")
 write_csv(xgb_variableImportance, "data/xgb_variableImportance_20260325.csv")
-
+#xgb_variableImportance <- readRDS("data/xgb_variableImportance_20260325.rds")
 
 ################################################################################
 # which species R2 significantly improves with each category? (Figure 3)
@@ -1025,6 +1025,59 @@ ggsave("SHAPimportance_20260329.pdf", height=11, width=11)
 ################################################################################
 ################################################################################
 
+################################################################################
+# stacked bar chart
+################################################################################
+
+# format dataset ---------------------------------------------------------------
+temp <- xgb_variableImportance %>%
+  subset(varSet == "spatVars") %>% # only full models
+  group_by(Feature, species) %>%
+  summarise(SHAP_importance = mean(SHAP_importance, na.rm=TRUE), .groups="drop") %>%
+  rename(Variable = Feature) %>%
+  left_join(tidy, by="Variable") %>%
+  group_by(species) %>%
+  mutate(total = sum(SHAP_importance, na.rm = TRUE), # cumulative SHAP values for each model
+         prop_T = sum(SHAP_importance[Category == "Traits"], na.rm = TRUE) / total, # % attributed to Traits
+         prop_bar = SHAP_importance / total) %>% # % attributed to each var
+  ungroup() %>%
+  mutate(
+    species = reorder(species, prop_T), # order by trait importance
+    Category = factor(Category, levels = c("Climate", "Disturbance", "Terrain", "Phenology", "Structure", "Traits"))) %>% # preferred Category order
+  arrange(species, Category)
 
 
+# create panels ----------------------------------------------------------------
 
+p1 <- temp %>%
+  ggplot(aes(y = species, x = SHAP_importance, fill = Category)) +
+  geom_bar(stat = "identity", position = position_fill()) +
+  geom_text(aes( label = ifelse(prop_bar > 0.1, Label, ""), x = SHAP_importance / 2), 
+            position = position_fill(vjust = 0.5), size = 2) +
+  scale_fill_manual(values = c("#70A4AF", "#7C4584", "#A8BBA3", "#D97C55", "#FDC71B", "#842B3B")) +
+  theme_minimal() +
+  xlab("SHAP importance (%)") +
+  ylab("Species")
+
+
+p2 <- temp %>%
+  group_by(Category, species) %>%
+  summarise(cat_size = sum(prop_bar)) %>%
+  group_by(Category) %>%
+  summarise(mean_cat_prop = mean(cat_size), y="Average") %>%
+  ggplot(aes(y=y, x = mean_cat_prop, fill = Category)) +
+  geom_bar(stat = "identity", position = position_fill()) +
+  geom_text(aes(label = paste(round(mean_cat_prop, digits = 2)*100, "%"), x = mean_cat_prop), position = position_fill(vjust = 0.5)) +
+  scale_fill_manual(values = c("#70A4AF", "#7C4584", "#A8BBA3", "#D97C55", "#FDC71B", "#842B3B")) +
+  theme_minimal() +
+  theme(legend.position = "none") +
+  xlab("Average SHAP importance (%)") +
+  ylab("")
+
+# plot it ----------------------------------------------------------------------
+
+ggarrange(p1, p2, ncol = 1, nrow = 2, heights = c(9, 1), align="hv")
+
+# save it ----------------------------------------------------------------------
+
+ggsave("SHAPimportance_20260330.png", height=12, width=12)
