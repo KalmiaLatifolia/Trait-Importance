@@ -43,13 +43,13 @@ setwd("/Users/lauraberman/Library/CloudStorage/OneDrive-NationalUniversityofSing
 # Create Figures ---------------------------------------------------------------
 # 9) Make a nice map (Figure 1) - 433
 # 10) Drop geometry - 482
-# 11) Make a correlation matrix plot (Figure 5) - 490
-
-
-
-
-
-
+# 11) Make a correlation matrix plot (Figure 2) - 490
+# 12) run XGBoost models - 565
+# 13) which species R2 significantly improves with each category? (Figure 3) - 710
+# 14) which species RMSE significantly improves with each category? (Figure 3 alt) - 852
+# 15) Heat map - variable importance - 977
+# 16) stacked bar chart (Figure 4) - 1021
+# 17)
 
 
 ################################################################################
@@ -1017,16 +1017,8 @@ ggplot(temp, aes(x = factor(species, levels = sp_order),
 ggsave("SHAPimportance_20260329.pdf", height=11, width=11)
 
 
-### LEFT OFF HERE - MARCH 26TH 2026 
-
 ################################################################################
-################################################################################
-################################################################################
-################################################################################
-################################################################################
-
-################################################################################
-# stacked bar chart
+# stacked bar chart - Figure 4
 ################################################################################
 
 # format dataset ---------------------------------------------------------------
@@ -1081,3 +1073,34 @@ ggarrange(p1, p2, ncol = 1, nrow = 2, heights = c(9, 1), align="hv")
 # save it ----------------------------------------------------------------------
 
 ggsave("SHAPimportance_20260330.png", height=12, width=12)
+
+
+
+################################################################################
+#
+################################################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
