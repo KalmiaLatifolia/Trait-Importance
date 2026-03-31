@@ -1077,14 +1077,80 @@ ggsave("SHAPimportance_20260330.png", height=12, width=12)
 
 
 ################################################################################
-#
+# Single species SHAP scores
 ################################################################################
 
+# get SHAP scores for 1 species ------------------------------------------------
+
+# choose species (25, 70, 32, 29, 31, 24, 61, 48)
+species
+i <- 65
+y <- NFPD(siteDetections_foliarTraits_BioCube[[species[i]]])
+
+# use full variable set
+vs <- 1
+spatVars <- siteDetections_foliarTraits_BioCube[, varSets[[vs]], drop = FALSE]
+
+# split into train and test sets
+n <- nrow(spatVars)
+train_idx <- sample(n, floor(0.8*n))
+test_idx  <- setdiff(seq_len(n), train_idx)
+
+X_train <- spatVars[train_idx, ]
+y_train <- y[train_idx]
+X_test  <- spatVars[test_idx, ]
+y_test  <- y[test_idx]
+
+dtrain <- xgb.DMatrix(as.matrix(X_train), label = y_train)
+dtest  <- xgb.DMatrix(as.matrix(X_test),  label = y_test)
+
+# set xgboost parameters
+params <- list(objective = "reg:squarederror", max_depth = 6, eta = 0.1)
+
+# run 5-fold cross validation (find best number of iterations)
+cv <- xgb.cv(params = params, data = dtrain,
+             nrounds = 100, nfold = 5, metrics = "rmse",
+             verbose = 0, early_stopping_rounds = 10)
+
+# run xgboost
+xgb_model <- xgb.train(params = params, data = dtrain, nrounds = cv$early_stop$best_iteration)
+
+# calculate SHAP scores
+shap <- shap.values(xgb_model, X_train = X_test)
+shap_values <- shap$shap_score
+
+# build dataframe
+temp <- data.frame(species = rep(species[i], nrow(shap_values)),  
+                   shap_CanopyHeight = shap_values$CA_Function_Favrichon_Sierra_CanopyHeight_30m_20250508, 
+                   CanopyHeight = X_test$CA_Function_Favrichon_Sierra_CanopyHeight_30m_20250508,
+                   shap_LMA = shap_values$LMA, LMA = X_test$LMA,
+                   shap_Phenolics = shap_values$Phenolics, Phenolics = X_test$Phenolics,
+                   shap_Potassium = shap_values$Potassium, Potassium = X_test$Potassium)
 
 
+# plot it ----------------------------------------------------------------------
 
+# canopy height
+ggplot() +
+  geom_point(data = siteDetections_foliarTraits_BioCube, aes(x=CA_Function_Favrichon_Sierra_CanopyHeight_30m_20250508/100, y=NFPD(get(species[i]))), color="#FDC71B") +
+  geom_smooth(data = temp, aes(x=CanopyHeight/100, y=((shap_CanopyHeight *4) +0.4)), color="black") + 
+  scale_y_continuous(name=paste(species[i], "\nnormalized detection rate"), sec.axis = sec_axis(~ . /4 -0.4/4, name="SHAP value")) +
+  theme_minimal() +
+  xlab("Canopy Height") +
+  xlim(c(0,80)) +
+  theme(axis.title.y.left=element_text(color="#FDC71B"))
+ggsave("figures/LGold_CH.PDF", width=6, height=3)
 
-
+# LMA
+ggplot() +
+  geom_point(data = siteDetections_foliarTraits_BioCube, aes(x=LMA, y=NFPD(get(species[i]))), color="#842B3B") +
+  geom_smooth(data = temp, aes(x=LMA, y=((shap_LMA *60) +0.4)), color="black") + 
+  scale_y_continuous(name=paste(species[i], "\nnormalized detection rate"), sec.axis = sec_axis(~ . /60 -0.4/60, name="SHAP value")) +
+  theme_minimal() +
+  xlab("LMA (g/m2)") +
+  xlim(c(0,400)) +
+  theme(axis.title.y.left=element_text(color="#842B3B"))
+ggsave("figures/GCKing_LMA.PDF", width=6, height=3)
 
 
 
