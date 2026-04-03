@@ -50,17 +50,25 @@ varSets <- list(
 varSets <- lapply(varSets, function(x) x[x %in% colnames(siteDetections_foliarTraits_BioCube)])
 
 
-# xgboost with SHAP and iterations in parallel ---------------------------------
-# ------------------------------------------------------------------------------
+# NFPD function ----------------------------------------------------------------
+FPD <- function(species_col) {species_col / max(species_col)}
+meanFPD <- function(species_col) {mean(FPD(species_col)[FPD(species_col)>0])}
+NFPD <- function(species_col) {(FPD(species_col))^(log(0.5)/log(meanFPD(species_col)))}
+
+
+################################################################################
+# xgboost with SHAP and iterations in parallel 
+################################################################################
+
 
 # Use multiple cores
 plan(multisession, workers = parallel::detectCores() - 1)  
 
-# list parallelizable tasks (6580)
+# list parallelizable tasks (65800) 
 tasks <- expand.grid(
   varSet = names(varSets),
   species_i = seq_along(species),
-  iter = 1:100
+  iter = 1:100 #(100 iterations)
 )
 
 # make a fxn -------------------------------------------------------------------
@@ -139,7 +147,7 @@ run_task <- function(vs, i, iter) {
 }
 
 
-# run the fxn -------------------------------------- (~30 min for 10 iterations)
+# run the fxn ------------------------------------ (~5 hours for 100 iterations)
 handlers(global = TRUE) 
 
 with_progress({
