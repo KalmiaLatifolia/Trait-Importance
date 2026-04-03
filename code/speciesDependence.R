@@ -1,4 +1,7 @@
 
+# DEPRECATED
+# This analysis is now done with xgboost, not randomforest.
+
 # species dependence
 # how many bird species can be modeled significantly more accurately when data is available?
 # 7 October 2025
