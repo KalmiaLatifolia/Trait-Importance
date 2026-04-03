@@ -1,4 +1,8 @@
 
+# DEPRECATED
+# code here is exploratory and was not used in final models or manuscript
+# (except to note that other model types performed better)
+
 # comparing model types
 # GAM
 # 13 Nov 2025
