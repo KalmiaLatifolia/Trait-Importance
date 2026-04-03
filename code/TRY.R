@@ -1,4 +1,7 @@
 
+# DEPRECATED
+# Final figures use combined SHIFT + TRY data
+
 # TRY data
 # 4 Dec 2025
 
