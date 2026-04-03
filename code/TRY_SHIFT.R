@@ -1,6 +1,9 @@
 
+# Species level plant traits
+# boxplots for Figure 5
+
 # merging TRY and SHIFT data
-# 16 Jan 2026
+# created 16 Jan 2026
 # Laura Berman
 
 library(rtry)
