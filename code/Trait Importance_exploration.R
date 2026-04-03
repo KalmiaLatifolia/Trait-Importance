@@ -1,4 +1,7 @@
 
+# DEPRECATED
+# code here is exploratory and was not used in final models or manuscript
+
 # Trait Importance
 # 16 July 2025
 # getting started with the trait importance project.
