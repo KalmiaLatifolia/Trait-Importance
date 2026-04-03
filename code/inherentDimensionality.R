@@ -1,4 +1,7 @@
 
+# DEPRECATED
+# code here is exploratory and was not used in final models or manuscript
+
 # Inherent dimensionality
 # 19 Sep 2025
 # Laura Berman
