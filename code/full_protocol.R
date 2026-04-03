@@ -49,7 +49,7 @@ setwd("/Users/lauraberman/Library/CloudStorage/OneDrive-NationalUniversityofSing
 # 14) which species RMSE significantly improves with each category? (Figure 3 alt) - 852
 # 15) Heat map - variable importance - 977
 # 16) stacked bar chart (Figure 4) - 1021
-# 17)
+# 17) Single species SHAP scores - 1089
 
 
 ################################################################################
@@ -540,6 +540,10 @@ cors_df <- cors_df %>%
   left_join(tidy, by = "Variable") %>%
   mutate(Label = factor(Label, levels = tidy$Label))  # preserve desired axis order
 
+# data exploration - look at specific cor values
+cors_df %>%
+  filter(species == "Mountain Bluebird", Label == "Canopy height") %>%
+  pull(rho)
 
 # plot it ----------------------------------------------------------------------
 ggplot(cors_df,
@@ -1038,6 +1042,11 @@ temp <- xgb_variableImportance %>%
     Category = factor(Category, levels = c("Climate", "Disturbance", "Terrain", "Phenology", "Structure", "Traits"))) %>% # preferred Category order
   arrange(species, Category)
 
+# what is the top variable per species?
+temp1 <- temp %>%
+  group_by(species) %>%
+  slice_max(order_by = prop_bar, n = 1, with_ties = FALSE) %>%
+  ungroup()
 
 # create panels ----------------------------------------------------------------
 
@@ -1083,8 +1092,9 @@ ggsave("SHAPimportance_20260330.png", height=12, width=12)
 # get SHAP scores for 1 species ------------------------------------------------
 
 # choose species (25, 70, 32, 29, 31, 24, 61, 48)
+species <- colnames(siteDetections_foliarTraits_BioCube)[4:97]
 species
-i <- 65
+i <- 26
 y <- NFPD(siteDetections_foliarTraits_BioCube[[species[i]]])
 
 # use full variable set
