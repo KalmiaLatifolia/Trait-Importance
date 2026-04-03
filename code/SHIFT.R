@@ -1,4 +1,7 @@
 
+# DEPRECATED
+# Final figures use combined SHIFT + TRY data
+
 # SHIFT
 # SHIFT data shared by Ting
 # 11 Dec 2025
