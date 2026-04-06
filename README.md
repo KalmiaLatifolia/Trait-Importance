@@ -1,4 +1,6 @@
+
 # Trait Importance
+
 This repository contains code to accompany the future manuscript tentatively titled **The predictive power of new remote sensing data for biological distributions**
 
 In its current state this is a working repository. Code is in flux and subject to change.
@@ -15,8 +17,12 @@ We compared the accuracy of species models with and without different predictor 
 
 # Data Availability
 
-All of the derived datasets used in this project are available within this repository inside the "Data" folder.
+
+All of the derived datasets used in this project are available within this repository inside the "data" folder.
 Most files are available in both csv and rds formats.
+
+Complete raster data of all 140 geospatial variables would never fit on GitHub, but luckily all of these are publicly available anyway. 
+You can check in "TableS1_Biocube_var_description" for the links to the original datasets.
 
 | File Name | Description |
 |-----------|-------------|
@@ -24,5 +30,15 @@ Most files are available in both csv and rds formats.
 | TableS1_Biocube_var_description | One row for each geospatial variable. Columns for variable descriptions, DOI of original publication, and link to dataset. |
 | tidyNames | Reference sheet for full variable names used in data files versus pretty names used in figure axes. |
 | xgb_modelParameters | xgboost outputs for each species. 100 iterations per species per model type. Model R2 and RMSE |
+
+
+
+
+
+
+
+
+
+
 
 
