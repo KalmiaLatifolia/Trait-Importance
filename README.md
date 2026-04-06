@@ -6,7 +6,7 @@ In its current state this is a working repository. Code is in flux and subject t
 The data files for this project are too large for storage on github. We anticipate archiving them upon completion of the project.
 
 
-![Protocol figure](figures/Figure 1_Map.png)
+![Protocol figure](figures/Figure1_Map.png)
 
 
 
