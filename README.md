@@ -1,5 +1,5 @@
 # Trait Importance
-This repository contains code to accompany the future manuscript tentatively titled **The predictive power of remote sensing data for biological distributions**
+This repository contains code to accompany the future manuscript tentatively titled **The predictive power of new remote sensing data for biological distributions**
 
 In its current state this is a working repository. Code is in flux and subject to change.
 
