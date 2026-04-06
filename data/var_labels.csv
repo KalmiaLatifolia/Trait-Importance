@@ -1,0 +1,83 @@
+﻿Variable,Label,lab_color
+A2C,Access to Cities,#7C4584
+AMP,Photosynthetic Amplitude,#D97C55
+aridityInd,Aridity,#70A4AF
+ASP_N,Aspect Northness,#A8BBA3
+bdod_0_200,Soil Bulk Density,#A8BBA3
+bio02,Daily Temp Range,#70A4AF
+bio03,Isothermality,#70A4AF
+bio04,Temp Seasonality,#70A4AF
+bio07,Annual Temp Range,#70A4AF
+bio12,Annual Precipitation,#70A4AF
+bio13,Precip (wettest month),#70A4AF
+bio14,Precip (dryest month),#70A4AF
+bio15,Precip Seasonality,#70A4AF
+bio17,Precip (driest quarter),#70A4AF
+bio18,Precip (warmest quarter),#70A4AF
+bioIntact,Bio Intactness,#7C4584
+Biomass,Biomass,#FDC71B
+CanopyHeight,Canopy Height,#FDC71B
+cec_0_200,Soil Cation Exchange Capacity,#A8BBA3
+Cellulose,Cellulose,#842B3B
+cfvo_0_200,Soil Course Fragments,#A8BBA3
+Chlorophylls,Chlorophylls,#842B3B
+clay_0_200,Clay Content,#A8BBA3
+climaticMoistInd,Climatic Moisture,#70A4AF
+conIntact,Contextual Intactness,#7C4584
+continentality,Continentality,#70A4AF
+DHI_FPAR8,Absorbed Photosynthetic Radiation,#D97C55
+DHI_GPP,Gross Primary Productivity (cumulative),#D97C55
+DHI_LAI8,Leaf Area Index,#D97C55
+DHI_NDVI,Normalized Difference Vegetative Index,#D97C55
+DTM,Elevation,#A8BBA3
+DTM_std,Elevation std,#A8BBA3
+DUR,Duration of Growing Season,#D97C55
+embergerQ,Emberger's Q,#70A4AF
+EOST,End of Season Time,#D97C55
+ETv1_disALEXI,Evapotranspiration,#FDC71B
+exiSound,Existing Sound,#7C4584
+fcf,Frost Change Frequency,#70A4AF
+Fiber,Fiber,#842B3B
+GEDI_AGB,Aboveground Biomass Density,#FDC71B
+GHM,Human Modification,#7C4584
+GHM_ag,Agriculture,#7C4584
+GHM_in,Infrastructure,#7C4584
+GHM_tr,Transportation,#7C4584
+GPP_annual,Gross Primary Productivity (annual),#FDC71B
+gst,Mean Temp of Growing Season,#70A4AF
+impSound,Impacting Sound,#7C4584
+interStdcloud,Cloud Variability (inter-annual),#70A4AF
+intraStdcloud,Cloud Variability (intra-annual),#70A4AF
+Lignin,Lignin,#842B3B
+LMA,LMA,#842B3B
+MAXN,Max Photosynthesis,#D97C55
+MAXT,Time of Max Photosynthesis,#D97C55
+meanCloud,Cloud Cover,#70A4AF
+MidCanopyHeight,Mid Canopy Height,#FDC71B
+Nitrogen,Nitrogen,#842B3B
+nitrogen_0_200,Soil Nitrogen,#A8BBA3
+NSC,NSC,#842B3B
+NTL_Min,Nightlight (min),#7C4584
+ocd_0_200,Soil Organic Carbon,#A8BBA3
+PETColdQuart,Pot.Evapotranspiration (winter),#70A4AF
+PETWetQuart,Pot.Evapotranspiration (wettest quarter),#70A4AF
+Phenolics,Phenolics,#842B3B
+phh2o_0_200,Soil pH,#A8BBA3
+Phosphorus,Phosphorus,#842B3B
+Potassium,Potassium,#842B3B
+PRI,Primary Cover,#7C4584
+sand_0_200,Sand Content,#A8BBA3
+seasonality,Cloud Cover Seasonality,#70A4AF
+SEC,Secondary Cover,#7C4584
+silt_0_200,Silt Content,#A8BBA3
+Slope,Slope,#A8BBA3
+Slope_std,Slope std,#A8BBA3
+SOST,Start of Season Time,#D97C55
+spatialStd,Cloud Cover Spatial Var.,#70A4AF
+StructRich,Structural Richness,#FDC71B
+Sugar,Sugar,#842B3B
+Sulfur,Sulfur,#842B3B
+swe,Snow water equivalent,#70A4AF
+WHI_pFWOS,Frozen ground without snow,#70A4AF
+WHI_SCV,Snow Cover Variability,#70A4AF
+WHI_SSL,Snow Season Length,#70A4AF
