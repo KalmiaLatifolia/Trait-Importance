@@ -1,0 +1,113 @@
+﻿VariableName,FileName,Category,Label,lab_color
+A2C,CA_Anthropocene_Weiss_et_al_A2C.tif,Disturbance,Access to Cities,#7C4584
+AMP,CA_Phenology_USGS_AMP_v2.tif,Phenology,Photosynthetic Amplitude,#D97C55
+annualPET,CA_Climate_ENVIREM_annualPET_v2.tif         ,Climate,Annual PET,#70A4AF
+aridityInd,CA_Climate_ENVIREM_aridityInd_v2.tif         ,Climate,Aridity,#70A4AF
+ASP_N,CA_Topography_EarthEnv_ASP_N_v2.tif,Terrain,Aspect Northness,#A8BBA3
+bdod_0_200,CA_Soil_SoilGrids_bdod_0_200.tif,Terrain,Soil Bulk Density,#A8BBA3
+bio01,CA_Climate_CHELSA_bio01_v2.tif               ,Climate,Air Temp,#70A4AF
+bio02,CA_Climate_CHELSA_bio02_v2.tif               ,Climate,Daily Temp Range,#70A4AF
+bio03,CA_Climate_CHELSA_bio03_v2.tif              ,Climate,Isothermality,#70A4AF
+bio04,CA_Climate_CHELSA_bio04_v2.tif               ,Climate,Temp Seasonality,#70A4AF
+bio05,CA_Climate_CHELSA_bio05_v2.tif               ,Climate,Max Summer Temp,#70A4AF
+bio06,CA_Climate_CHELSA_bio06_v2.tif              ,Climate,Min Winter Temp,#70A4AF
+bio07,CA_Climate_CHELSA_bio07_v2.tif               ,Climate,Annual Temp Range,#70A4AF
+bio08,CA_Climate_CHELSA_bio08_v2.tif               ,Climate,Temp (wettest season),#70A4AF
+bio09,CA_Climate_CHELSA_bio09_v2.tif               ,Climate,Temp (driest season),#70A4AF
+bio10,CA_Climate_CHELSA_bio10_v2.tif               ,Climate,Mean Summer Temp,#70A4AF
+bio11,CA_Climate_CHELSA_bio11_v2.tif,Climate,Mean Winter Temp,#70A4AF
+bio12,CA_Climate_CHELSA_bio12_v2.tif              ,Climate,Annual Precipitation,#70A4AF
+bio13,CA_Climate_CHELSA_bio13_v2.tif               ,Climate,Precip (wettest month),#70A4AF
+bio14,CA_Climate_CHELSA_bio14_v2.tif               ,Climate,Precip (dryest month),#70A4AF
+bio15,CA_Climate_CHELSA_bio15_v2.tif              ,Climate,Precip Seasonality,#70A4AF
+bio16,CA_Climate_CHELSA_bio16_v2.tif               ,Climate,Precip (rainy season),#70A4AF
+bio17,CA_Climate_CHELSA_bio17_v2.tif               ,Climate,Precip (driest quarter),#70A4AF
+bio18,CA_Climate_CHELSA_bio18_v2.tif              ,Climate,Precip (warmest quarter),#70A4AF
+bio19,CA_Climate_CHELSA_bio19_v2.tif               ,Climate,Precip (winter),#70A4AF
+bioIntact,CA_Anthropocene_Newbold_et_al_bioIntact.tif,Disturbance,Bio Intactness,#7C4584
+Biomass,GEDI_Cali_Biomass_1km_20250429.tif,Function,Biomass,#FDC71B
+burn_year,California_Fire_Perimeters_2024.zip,Disturbance,Burn Year,#7C4584
+Calcium,20180621_Calcium_30m_polished,Physiology,Calcium,#842B3B
+CanopyHeight,Favrichon_Sierra_CanopyHeight_30m_20250508.tif,Function,Canopy Height,#FDC71B
+cec_0_200,CA_Soil_SoilGrids_cec_0_200.tif,Terrain,Soil Cation Exchange Capacity,#A8BBA3
+Cellulose,20180621_Cellulose_30m_polished,Physiology,Cellulose,#842B3B
+cfvo_0_200,CA_Soil_SoilGrids_cfvo_0_200.tif,Terrain,Soil Course Fragments,#A8BBA3
+Chlorophylls,20180621_Chlorophylls_30m_polished,Physiology,Chlorophylls,#842B3B
+clay_0_200,CA_Soil_SoilGrids_clay_0_200.tif,Terrain,Clay Content,#A8BBA3
+climaticMoistInd,CA_Climate_ENVIREM_climaticMoistInd_v2.tif   ,Climate,Climatic Moisture,#70A4AF
+conIntact,CA_Anthropocene_Mokany_et_al_conIntact.tif,Disturbance,Contextual Intactness,#7C4584
+continentality,CA_Climate_ENVIREM_continentality_v2.tif    ,Climate,Continentality,#70A4AF
+DHI_FPAR8,CA_Phenology_SILVISLab_DHI_FPAR8_v2.tif,Phenology,Absorbed Photosynthetic Radiation,#D97C55
+DHI_GPP,CA_Phenology_SILVISLab_DHI_GPP_v2.tif,Phenology,Gross Primary Productivity (cumulative),#D97C55
+DHI_LAI8,CA_Phenology_SILVISLab_DHI_LAI8_v2.tif,Phenology,Leaf Area Index,#D97C55
+DHI_NDVI,CA_Phenology_SILVISLab_DHI_NDVI_v2.tif,Phenology,Normalized Difference Vegetative Index,#D97C55
+DTM,CA_Topography_EarthEnv_DTM_v2.tif,Terrain,Elevation,#A8BBA3
+DTM_std,CA_Topography_EarthEnv_DTM_std_v2.tif,Terrain,Elevation std,#A8BBA3
+DUR,CA_Phenology_USGS_DUR_v2.tif,Phenology,Duration of Growing Season,#D97C55
+embergerQ,CA_Climate_ENVIREM_embergerQ_v2.tif          ,Climate,Emberger's Q,#70A4AF
+EOST,CA_Phenology_USGS_EOST_v2.tif,Phenology,End of Season Time,#D97C55
+ETv1_disALEXI,CA_Function_ECOSTRESS_ETv1_disALEXI.tif,Function,Evapotranspiration,#FDC71B
+exiSound,CA_Anthropocene_NPS_exiSound.tif,Disturbance,Existing Sound,#7C4584
+fcf,CA_Climate_CHELSA_fcf_v2.tif                 ,Climate,Frost Change Frequency,#70A4AF
+Fiber,20180621_Fiber_30m_polished,Physiology,Fiber,#842B3B
+gdd0,CA_Climate_CHELSA_gdd0_v2.tif               ,Climate,Growing days (above 0C),#70A4AF
+gdd10,CA_Climate_CHELSA_gdd10_v2.tif               ,Climate,Growing days (above 10C),#70A4AF
+gdd5,CA_Climate_CHELSA_gdd5_v2.tif               ,Climate,Growing days (above 5C),#70A4AF
+GEDI_AGB,CA_Function_GEDI_AGBv2.tif,Function,Aboveground Biomass Density,#FDC71B
+GHM,CA_Anthropocene_NASA_SEDAC_nsGHM.tif,Disturbance,Human Modification,#7C4584
+GHM_ag,CA_Anthropocene_Theobald_et_al_tGHM_ag.tif,Disturbance,Agriculture,#7C4584
+GHM_bu,CA_Anthropocene_Theobald_et_al_tGHM_bu.tif,Disturbance,Built-up cover,#7C4584
+GHM_en,CA_Anthropocene_Theobald_et_al_tGHM_en.tif,Disturbance,Energy cover,#7C4584
+GHM_in,CA_Anthropocene_Theobald_et_al_tGHM_in.tif,Disturbance,Infrastructure,#7C4584
+GHM_tr,CA_Anthropocene_Theobald_et_al_tGHM_tr.tif,Disturbance,Transportation,#7C4584
+GPP_annual,CA_Function_TROPOMI_GPP_annual.tif,Function,Gross Primary Productivity (annual),#FDC71B
+gsp,CA_Climate_CHELSA_gsp_v2.tif                ,Climate,Growing Season Precip,#70A4AF
+gst,CA_Climate_CHELSA_gst_v2.tif                 ,Climate,Mean Temp of Growing Season,#70A4AF
+impSound,CA_Anthropocene_NPS_impSound.tif,Disturbance,Impacting Sound,#7C4584
+interStdcloud,CA_Climate_EarthEnv_interStd_v2.tif          ,Climate,Cloud Variability (inter-annual),#70A4AF
+intraStdcloud,CA_Climate_EarthEnv_intraStd_v2.tif          ,Climate,Cloud Variability (intra-annual),#70A4AF
+landcover_type,GAP_2011.tif,Context,Landcover,NA
+Lignin,20180621_Lignin_30m_polished,Physiology,Lignin,#842B3B
+LMA,20180621_LMA_30m_polished,Physiology,LMA,#842B3B
+MAXN,CA_Phenology_USGS_MAXN_v2.tif,Phenology,Max Photosynthesis,#D97C55
+MAXT,CA_Phenology_USGS_MAXT_v2.tif,Phenology,Time of Max Photosynthesis,#D97C55
+meanCloud,CA_Climate_EarthEnv_mean_v2.tif             ,Climate,Cloud Cover,#70A4AF
+MidCanopyHeight,Favrichon_Sierra_RH50_30m_20250508.tif,Function,Mid Canopy Height,#FDC71B
+ngd0,CA_Climate_CHELSA_ngd0_v2.tif                ,Climate,Growing days (above 0C),#70A4AF
+ngd10,CA_Climate_CHELSA_ngd10_v2.tif              ,Climate,Growing days (above 10C),#70A4AF
+ngd5,CA_Climate_CHELSA_ngd5_v2.tif                ,Climate,Growing days (above 5C),#70A4AF
+Nitrogen,20180621_Nitrogen_30m_polished,Physiology,Nitrogen,#842B3B
+nitrogen_0_200,CA_Soil_SoilGrids_nitrogen_0_200.tif,Terrain,Soil Nitrogen,#A8BBA3
+NSC,20180621_NSC_30m_polished,Physiology,NSC,#842B3B
+NTL_2020,CA_Anthropocene_Li_et_al_NTL_2020_.tif,Disturbance,Nightlight,#7C4584
+NTL_Min,CA_Anthropocene_Mu_et_al_mNTL_Min.tif,Disturbance,Nightlight (min),#7C4584
+ocd_0_200,CA_Soil_SoilGrids_ocd_0_200.tif,Terrain,Soil Organic Carbon,#A8BBA3
+PETColdQuart,CA_Climate_ENVIREM_PETColdQuart_v2.tif       ,Climate,Pot.Evapotranspiration (winter),#70A4AF
+PETDryQuart,CA_Climate_ENVIREM_PETDryQuart_v2.tif       ,Climate,Pot.Evapotranspiration (dry season),#70A4AF
+PETseas,CA_Climate_ENVIREM_PETseas_v2.tif            ,Climate,Pot.Evapotranspiration Seasonality,#70A4AF
+PETWarmQuart,CA_Climate_ENVIREM_PETWarmQuart_v2.tif       ,Climate,Pot.Evapotranspiration (summer),#70A4AF
+PETWetQuart,CA_Climate_ENVIREM_PETWetQuart_v2.tif       ,Climate,Pot.Evapotranspiration (wettest quarter),#70A4AF
+Phenolics,20180621_Phenolics_30m_polished,Physiology,Phenolics,#842B3B
+phh2o_0_200,CA_Soil_SoilGrids_phh2o_0_200.tif,Terrain,Soil pH,#A8BBA3
+Phosphorus,20180621_Phosphorus_30m_polished,Physiology,Phosphorus,#842B3B
+Potassium,20180621_Potassium_30m_polished,Physiology,Potassium,#842B3B
+PRI,CA_Anthropocene_Hoskins_et_al_LU2005_PRI.tif,Disturbance,Primary Cover,#7C4584
+sand_0_200,CA_Soil_SoilGrids_sand_0_200.tif,Terrain,Sand Content,#A8BBA3
+scd,CA_Climate_CHELSA_scd_v2.tif                 ,Climate,Snow cover days,#70A4AF
+seasonality,CA_Climate_EarthEnv_seasonality_v2.tif       ,Climate,Cloud Cover Seasonality,#70A4AF
+SEC,CA_Anthropocene_Hoskins_et_al_LU2005_SEC.tif,Disturbance,Secondary Cover,#7C4584
+silt_0_200,CA_Soil_SoilGrids_silt_0_200.tif,Terrain,Silt Content,#A8BBA3
+Slope,CA_Topography_EarthEnv_Slope_v2.tif,Terrain,Slope,#A8BBA3
+Slope_std,CA_Topography_EarthEnv_Slope_std_v2.tif,Terrain,Slope std,#A8BBA3
+SOST,CA_Phenology_USGS_SOST_v2.tif,Phenology,Start of Season Time,#D97C55
+spatialStd,CA_Climate_EarthEnv_spatialStd_v2.tif        ,Climate,Cloud Cover Spatial Var.,#70A4AF
+Starch,20180621_Starch_30m_polished,Physiology,Starch,#842B3B
+StructRich,GEDI_Cali_StructuralRichness_1km_20240120.tif,Function,Structural Richness,#FDC71B
+Sugar,20180621_Sugar_30m_polished,Physiology,Sugar,#842B3B
+Sulfur,20180621_Sulfur_30m_polished,Physiology,Sulfur,#842B3B
+swe,CA_Climate_CHELSA_swe_v2.tif                ,Climate,Snow water equivalent,#70A4AF
+thermInd,CA_Climate_ENVIREM_thermInd_v2.tif           ,Climate,Thermicity,#70A4AF
+TRI,CA_Topography_EarthEnv_TRI_v2.tif,Terrain,Ruggedness,#A8BBA3
+WHI_pFWOS,CA_Climate_SILVISLab_WHI_pFWOS_v2.tif        ,Climate,Frozen ground without snow,#70A4AF
+WHI_SCV,CA_Climate_SILVISLab_WHI_SCV_v2.tif,Climate,Snow Cover Variability,#70A4AF
+WHI_SSL,CA_Climate_SILVISLab_WHI_SSL_v2.tif,Climate,Snow Season Length,#70A4AF
