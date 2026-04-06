@@ -30,7 +30,7 @@ setwd("/Users/lauraberman/Library/CloudStorage/OneDrive-NationalUniversityofSing
 # Table of Contents
 ################################################################################
 
-# Data processing --------------------------------------------------------------
+# Data processing ----------------------------------------(see dataProcessing.R)
 # 1) Load and format bioacoustic data - 45
 # 2) Remove burned areas - 158
 # 3) Remove sites outside study area - 200
@@ -44,7 +44,7 @@ setwd("/Users/lauraberman/Library/CloudStorage/OneDrive-NationalUniversityofSing
 # 9) Make a nice map (Figure 1) - 433
 # 10) Drop geometry - 482
 # 11) Make a correlation matrix plot (Figure 2) - 490
-# 12) run XGBoost models - 565
+# 12) run XGBoost models - 565 (see xgboost.R)
 # 13) which species R2 significantly improves with each category? (Figure 3) - 710
 # 14) which species RMSE significantly improves with each category? (Figure 3 alt) - 852
 # 15) Heat map - variable importance - 977
