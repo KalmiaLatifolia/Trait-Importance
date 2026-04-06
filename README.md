@@ -32,9 +32,18 @@ You can check in "TableS1_Biocube_var_description" for the links to the original
 | xgb_modelParameters | xgboost outputs for each species. 100 iterations per species per model type. Model R2 and RMSE |
 
 
+# Code
+
+All relevant code is available in the 'code' folder. The scripts here start from 
+publicly available raster data and show all steps of data cleaning, processing, all the way to the final
+figure visualizations.
 
 
-
+| File Name | Description |
+|-----------|-------------|
+| full_protocol.R | The full data processing, analysis and visualization pipeline. Start to finish. |
+| dataProcessing.R | Just the first section of the pipeline. Data extraction, cleaning, and formatting. |
+| xgboost.R | The second section of the pipeline. Calculating relative abundance models with xgboost. |
 
 
 
