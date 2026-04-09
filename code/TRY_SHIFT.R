@@ -89,24 +89,25 @@ TraitData$AccSpeciesName[grepl("^Alnus incana", TraitData$AccSpeciesName)] <- "A
 TraitData$AccSpeciesName[grepl("^Ceanothus cuneatus", TraitData$AccSpeciesName)] <- "Ceanothus cuneatus"
 TraitData$AccSpeciesName[grepl("^Juniperus occidentalis", TraitData$AccSpeciesName)] <- "Juniperus occidentalis"
 
+# pick species
+TraitData <- subset(TraitData, TraitData$AccSpeciesName=="Pinus jeffreyi" |
+                 TraitData$AccSpeciesName=="Pinus contorta" |
+                 TraitData$AccSpeciesName=="Pinus ponderosa" |
+                 TraitData$AccSpeciesName=="Pinus monticola" |
+                 TraitData$AccSpeciesName=="Abies concolor" |
+                 TraitData$AccSpeciesName=="Quercus chrysolepis" |
+                 TraitData$AccSpeciesName=="Quercus douglasii" |
+                 TraitData$AccSpeciesName=="Salix scouleriana" |
+                 TraitData$AccSpeciesName=="Quercus kelloggii" |
+                 TraitData$AccSpeciesName=="Populus fremontii" |
+                 TraitData$AccSpeciesName=="Salix exigua" |
+                 TraitData$AccSpeciesName=="Populus tremuloides" |
+                 TraitData$AccSpeciesName=="Alnus incana" )
 
 # make some nice plots ---------------------------------------------------------
 
 # plant height
 temp <- subset(TraitData, TraitData$TraitName== "Plant height vegetative")
-temp <- subset(temp, temp$AccSpeciesName=="Pinus jeffreyi" |
-                 temp$AccSpeciesName=="Pinus contorta" |
-                 temp$AccSpeciesName=="Pinus ponderosa" |
-                 temp$AccSpeciesName=="Pinus monticola" |
-                 temp$AccSpeciesName=="Abies concolor" |
-                 temp$AccSpeciesName=="Quercus chrysolepis" |
-                 temp$AccSpeciesName=="Quercus douglasii" |
-                 temp$AccSpeciesName=="Salix scouleriana" |
-                 temp$AccSpeciesName=="Quercus kelloggii" |
-                 temp$AccSpeciesName=="Populus fremontii" |
-                 temp$AccSpeciesName=="Salix exigua" |
-                 temp$AccSpeciesName=="Populus tremuloides" |
-                 temp$AccSpeciesName=="Alnus incana" )
 ggplot(temp, aes(x=StdValue, y=reorder(AccSpeciesName, StdValue, FUN = mean))) +
   geom_boxplot(color="#FDC71B", fill="#FFE090") + 
   xlab("Plant Height (m)") +
@@ -119,21 +120,8 @@ ggplot(temp, aes(x=StdValue, y=reorder(AccSpeciesName, StdValue, FUN = mean))) +
             vjust = 0, size = 3)
 ggsave("figures/PlantHeight.PDF", height=4.5, width=5)
 
-
+# LMA
 temp <- subset(TraitData, TraitData$TraitName== "LMA")
-temp <- subset(temp, temp$AccSpeciesName=="Pinus jeffreyi" |
-                 temp$AccSpeciesName=="Pinus contorta" |
-                 temp$AccSpeciesName=="Pinus ponderosa" |
-                 temp$AccSpeciesName=="Pinus monticola" |
-                 temp$AccSpeciesName=="Abies concolor" |
-                 temp$AccSpeciesName=="Quercus chrysolepis" |
-                 temp$AccSpeciesName=="Quercus douglasii" |
-                 temp$AccSpeciesName=="Salix scouleriana" |
-                 temp$AccSpeciesName=="Quercus kelloggii" |
-                 temp$AccSpeciesName=="Populus fremontii" |
-                 temp$AccSpeciesName=="Salix exigua" |
-                 temp$AccSpeciesName=="Populus tremuloides" |
-                 temp$AccSpeciesName=="Alnus incana" )
 ggplot(temp, aes(x=StdValue, y=reorder(AccSpeciesName, StdValue, FUN = function(x) mean(x, na.rm = TRUE)))) +
   geom_boxplot(color="#842B3B", fill="#B4777C") + 
   xlab("LMA") +
@@ -145,3 +133,36 @@ ggplot(temp, aes(x=StdValue, y=reorder(AccSpeciesName, StdValue, FUN = function(
             aes(x = 400 * 0.95, y = AccSpeciesName, label = paste0("n=", n)), 
             vjust = 0, size = 3) 
 ggsave("figures/LMA.PDF", height=4.5, width=5)
+
+
+# nitrogen
+temp <- subset(TraitData, TraitData$TraitName== "nitrogen")
+ggplot(temp, aes(x=StdValue, y=reorder(AccSpeciesName, StdValue, FUN = function(x) mean(x, na.rm = TRUE)))) +
+  geom_boxplot(color="#842B3B", fill="#B4777C") + 
+  xlab("Nitrogen (mg/g)") +
+  ylab("") + 
+  theme_minimal() +
+  scale_y_discrete(position = "right") +
+  geom_text(data = temp %>% group_by(AccSpeciesName) %>% summarise(n = n()), 
+            aes(x = 50, y = AccSpeciesName, label = paste0("n=", n)), 
+            vjust = 0, size = 3) 
+ggsave("figures/nitrogen.PDF", height=4.5, width=5)
+
+
+# Sulfur
+temp <- subset(TraitData, TraitData$TraitName== "sulfur")
+ggplot(temp, aes(x=StdValue, y=reorder(AccSpeciesName, StdValue, FUN = function(x) mean(x, na.rm = TRUE)))) +
+  geom_boxplot(color="#842B3B", fill="#B4777C") + 
+  xlab("Sulfur (mg/g)") +
+  ylab("") + 
+  theme_minimal() +
+  scale_y_discrete(position = "right") +
+  geom_text(data = temp %>% group_by(AccSpeciesName) %>% summarise(n = n()), 
+            aes(x = 3, y = AccSpeciesName, label = paste0("n=", n)), 
+            vjust = 0, size = 3) 
+ggsave("figures/sulfur.PDF", height=3, width=5)
+
+
+
+
+
