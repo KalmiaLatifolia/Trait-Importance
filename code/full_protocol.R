@@ -1094,7 +1094,7 @@ ggsave("SHAPimportance_20260330.png", height=12, width=12)
 # choose species (25, 70, 32, 29, 31, 24, 61, 48)
 species <- colnames(siteDetections_foliarTraits_BioCube)[4:97]
 species
-i <- 26
+i <- 48
 y <- NFPD(siteDetections_foliarTraits_BioCube[[species[i]]])
 
 # use full variable set
