@@ -44,6 +44,8 @@ figure visualizations.
 | full_protocol.R | The full data processing, analysis and visualization pipeline. Start to finish. |
 | dataProcessing.R | Just the first section of the pipeline. Data extraction, cleaning, and formatting. |
 | xgboost.R | The second section of the pipeline. Calculating relative abundance models with xgboost. |
+| correlations.R | Code to generate Figure 2 - the correlation matrix |
+| TRY_SHIFT.R | Code to generate the boxplots in Figure 5 |
 
 
 
