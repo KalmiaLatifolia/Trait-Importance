@@ -81,4 +81,69 @@ ggplot(cors_df,
 ggsave("figures/Correlation_Matrix1.pdf", height=10, width=15)
 
 
+################################################################################
+# Supplement - correlation plots - spatial vars only
+################################################################################
 
+# correlation
+TTC <- as.data.frame(cor(spatVars, method = "spearman"))
+
+# pivot longer
+TTC_long <- as.data.frame(TTC) %>%
+  rownames_to_column("V2") %>%           
+  pivot_longer(-V2, names_to = "Variable", values_to = "rho")
+
+# hierarchical clustering
+hc <- hclust(as.dist(1 - TTC), method="average")$order
+
+# plot it
+ggplot(TTC_long,
+       aes(x = factor(Variable, levels = colnames(TTC)[hc]),
+           y = factor(V2, levels = colnames(TTC)[hc]),
+           fill = rho)) +
+  geom_tile() +
+  scale_fill_gradient2(limits = c(-1, 1), midpoint = 0, name = "Spearman’s ρ") +
+  theme_minimal()  +
+  theme(axis.text.x = element_text(size = 6, angle = 45, hjust = 1,
+                                   colour = tidy$labelColor[match(colnames(TTC)[hc], tidy$Variable)]),
+        axis.text.y = element_text(size = 6,
+                                   colour = tidy$labelColor[match(colnames(TTC)[hc], tidy$Variable)])) +
+  xlab("") +
+  ylab("") +
+  scale_x_discrete(labels = tidy$Label[match(colnames(TTC)[hc], tidy$Variable)]) +
+  scale_y_discrete(labels = tidy$Label[match(colnames(TTC)[hc], tidy$Variable)])
+
+ggsave("TraitTraitCorrelations.PDF", height=15, width=15)
+
+
+
+
+################################################################################
+# Supplement - correlation plots - species only
+################################################################################
+
+# correlation
+SSC <- as.data.frame(cor(NFPD(species), method = "spearman"))
+
+# pivot longer
+SSC_long <- as.data.frame(SSC) %>%
+  rownames_to_column("S2") %>%           
+  pivot_longer(-S2, names_to = "Species", values_to = "rho")
+
+# hierarchical clustering
+hc <- hclust(as.dist(1 - SSC), method="average")$order
+
+# plot it
+ggplot(SSC_long,
+       aes(x = factor(Species, levels = colnames(SSC)[hc]),
+           y = factor(S2, levels = colnames(SSC)[hc]),
+           fill = rho)) +
+  geom_tile() +
+  scale_fill_gradient2(limits = c(-1, 1), midpoint = 0, name = "Spearman’s ρ") +
+  theme_minimal()  +
+  theme(axis.text.x = element_text(size = 6, angle = 45, hjust = 1),
+        axis.text.y = element_text(size = 6)) +
+  xlab("") +
+  ylab("")
+
+ggsave("SpeciesSpeciesCorrelations.PDF", height=15, width=15)
