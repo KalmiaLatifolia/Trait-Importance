@@ -162,6 +162,18 @@ ggplot(temp, aes(x=StdValue, y=reorder(AccSpeciesName, StdValue, FUN = function(
             vjust = 0, size = 3) 
 ggsave("figures/sulfur.PDF", height=3, width=5)
 
+# potassium
+temp <- subset(TraitData, TraitData$TraitName== "potassium")
+ggplot(temp, aes(x=StdValue, y=reorder(AccSpeciesName, StdValue, FUN = function(x) mean(x, na.rm = TRUE)))) +
+  geom_boxplot(color="#842B3B", fill="#B4777C") + 
+  xlab("Potasium (mg/g)") +
+  ylab("") + 
+  theme_minimal() +
+  scale_y_discrete(position = "right") +
+  geom_text(data = temp %>% group_by(AccSpeciesName) %>% summarise(n = n()), 
+            aes(x = 30, y = AccSpeciesName, label = paste0("n=", n)), 
+            vjust = 0, size = 3) 
+ggsave("figures/potassium.PDF", height=3, width=5)
 
 
 
