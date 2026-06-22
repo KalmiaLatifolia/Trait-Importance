@@ -438,13 +438,20 @@ siteDetections_foliarTraits_BioCube$CA_Diversity_Kling_et_al_2018_Species_Endemi
 # Structure category should be exclusively GEDI derived -----------------------
 siteDetections_foliarTraits_BioCube$CA_Function_OpenET_annualMean_2016_2022_v2 <- NULL
 siteDetections_foliarTraits_BioCube$CA_Function_OpenET_monthlyVar_2016_2022_v2 <- NULL
+siteDetections_foliarTraits_BioCube$CA_Function_TROPOMI_GPP_annual <- NULL
 
-# siteDetections_foliarTraits_BioCube has 553 obs of 232 vars
+# exclude variables which do not fit into my six categories --------------------
+siteDetections_foliarTraits_BioCube$CA_Landcover_Landfire_2020_PHYS_LCRichness <- NULL
+siteDetections_foliarTraits_BioCube$CA_Landcover_Landfire_2020_PHYS_VTRichness <- NULL
+siteDetections_foliarTraits_BioCube$CA_Landcover_Landfire_2020_SBCLS_LCRichness <- NULL
+siteDetections_foliarTraits_BioCube$CA_Landcover_Landfire_2020_SBCLS_VTRichness <- NULL
+
+# siteDetections_foliarTraits_BioCube has 553 obs of 228 vars
 
 # save it ----------------------------------------------------------------------
 write_rds(siteDetections_foliarTraits_BioCube, "data/siteDetections_foliarTraits_BioCube_20260622.rds")
 write_csv(siteDetections_foliarTraits_BioCube, "data/siteDetections_foliarTraits_BioCube_20260622.csv")
-# siteDetections_foliarTraits_BioCube <- readRDS("data/siteDetections_foliarTraits_BioCube_20260320.rds")
+# siteDetections_foliarTraits_BioCube <- readRDS("data/siteDetections_foliarTraits_BioCube_20260622.rds")
 
 ################################################################################
 #  make a nice map
@@ -509,7 +516,7 @@ siteDetections_foliarTraits_BioCube <- st_drop_geometry(siteDetections_foliarTra
 # set up variable groups -------------------------------------------------------
 names(siteDetections_foliarTraits_BioCube)
 species = siteDetections_foliarTraits_BioCube[4:97]
-spatVars  = siteDetections_foliarTraits_BioCube[98:234]
+spatVars  = siteDetections_foliarTraits_BioCube[98:228]
 
 # NFPD function ----------------------------------------------------------------
 FPD <- function(species_col) {species_col / max(species_col)}
@@ -528,10 +535,10 @@ cors_df <- as.data.frame(spTraitCors) %>%
 # hclust rows and columns ------------------------------------------------------
 
 row_hc <- hclust(as.dist(1 - cor(t(spTraitCors), method = "spearman")), 
-                  method = "centroid")$order
+                  method = "average")$order
 
 col_hc <- hclust(as.dist(1 - cor(spTraitCors, method = "spearman")),
-                  method = "centroid")$order
+                  method = "average")$order
 
 # Tidy variable labels ---------------------------------------------------------
 
@@ -707,11 +714,11 @@ xgb_modelParameters <- do.call(rbind, lapply(results, `[[`, "model"))
 xgb_variableImportance <- do.call(rbind, lapply(results, `[[`, "importance"))
 
 # save it ----------------------------------------------------------------------
-write_rds(xgb_modelParameters, "data/xgb_modelParameters_20260325.rds")
-write_csv(xgb_modelParameters, "data/xgb_modelParameters_20260325.csv")
+write_rds(xgb_modelParameters, "data/xgb_modelParameters_20260622.rds")
+write_csv(xgb_modelParameters, "data/xgb_modelParameters_20260622.csv")
 
-write_rds(xgb_variableImportance, "data/xgb_variableImportance_20260325.rds")
-write_csv(xgb_variableImportance, "data/xgb_variableImportance_20260325.csv")
+write_rds(xgb_variableImportance, "data/xgb_variableImportance_20260622.rds")
+write_csv(xgb_variableImportance, "data/xgb_variableImportance_20260622.csv")
 #xgb_variableImportance <- readRDS("data/xgb_variableImportance_20260325.rds")
 
 ################################################################################
