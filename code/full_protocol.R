@@ -435,11 +435,15 @@ siteDetections_foliarTraits_BioCube$CA_Diversity_Kling_et_al_2018_EndemicSpecies
 siteDetections_foliarTraits_BioCube$CA_Diversity_Kling_et_al_2018_Species_Diversity <- NULL
 siteDetections_foliarTraits_BioCube$CA_Diversity_Kling_et_al_2018_Species_Endemism <- NULL
 
-# siteDetections_foliarTraits_BioCube has 553 obs of 234 vars
+# Structure category should be exclusively GEDI derived -----------------------
+siteDetections_foliarTraits_BioCube$CA_Function_OpenET_annualMean_2016_2022_v2 <- NULL
+siteDetections_foliarTraits_BioCube$CA_Function_OpenET_monthlyVar_2016_2022_v2 <- NULL
+
+# siteDetections_foliarTraits_BioCube has 553 obs of 232 vars
 
 # save it ----------------------------------------------------------------------
-write_rds(siteDetections_foliarTraits_BioCube, "data/siteDetections_foliarTraits_BioCube_20260320.rds")
-write_csv(siteDetections_foliarTraits_BioCube, "data/siteDetections_foliarTraits_BioCube_20260320.csv")
+write_rds(siteDetections_foliarTraits_BioCube, "data/siteDetections_foliarTraits_BioCube_20260622.rds")
+write_csv(siteDetections_foliarTraits_BioCube, "data/siteDetections_foliarTraits_BioCube_20260622.csv")
 # siteDetections_foliarTraits_BioCube <- readRDS("data/siteDetections_foliarTraits_BioCube_20260320.rds")
 
 ################################################################################
