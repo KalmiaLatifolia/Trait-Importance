@@ -22,7 +22,7 @@ siteDetections_foliarTraits_BioCube <- readRDS("data/siteDetections_foliarTraits
 # set up variable groups -------------------------------------------------------
 names(siteDetections_foliarTraits_BioCube)
 species = siteDetections_foliarTraits_BioCube[4:97]
-spatVars  = siteDetections_foliarTraits_BioCube[98:234]
+spatVars  = siteDetections_foliarTraits_BioCube[98:183, 190:234] # exclude modeled diversity/landcover vars
 
 # NFPD function ----------------------------------------------------------------
 FPD <- function(species_col) {species_col / max(species_col)}
@@ -147,3 +147,25 @@ ggplot(SSC_long,
   ylab("")
 
 ggsave("SpeciesSpeciesCorrelations.PDF", height=15, width=15)
+
+
+
+
+################################################################################
+# simple pairwise relationships 
+################################################################################
+
+ggplot(siteDetections_foliarTraits_BioCube, aes(y=NFPD(`Acorn Woodpecker`), x=CA_Topography_EarthEnv_DTM_v2)) +
+  geom_point() +
+  theme_minimal() +
+  xlab("Elevation (meters)")
+
+
+
+
+
+
+
+
+
+
