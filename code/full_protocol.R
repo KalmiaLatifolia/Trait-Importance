@@ -716,10 +716,11 @@ xgb_variableImportance <- do.call(rbind, lapply(results, `[[`, "importance"))
 # save it ----------------------------------------------------------------------
 write_rds(xgb_modelParameters, "data/xgb_modelParameters_20260622.rds")
 write_csv(xgb_modelParameters, "data/xgb_modelParameters_20260622.csv")
+xgb_modelParameters <- readRDS("data/xgb_modelParameters_20260622.rds")
 
 write_rds(xgb_variableImportance, "data/xgb_variableImportance_20260622.rds")
 write_csv(xgb_variableImportance, "data/xgb_variableImportance_20260622.csv")
-#xgb_variableImportance <- readRDS("data/xgb_variableImportance_20260325.rds")
+#xgb_variableImportance <- readRDS("data/xgb_variableImportance_20260622.rds")
 
 ################################################################################
 # which species R2 significantly improves with each category? (Figure 3)
@@ -858,7 +859,7 @@ annotate_figure(
   ggarrange(p1, p2, p3, p4, p5, p6, ncol = 3, nrow = 2, heights = c(4, 1), align="hv"),
   left = text_grob("Species with significant improvement", rot = 90, size = 14, vjust = 1))
 
-ggsave("SpeciesBestR2_20260326.pdf", height=10, width=15)
+ggsave("SpeciesBestR2_20260623.pdf", height=10, width=15)
 
 
 
@@ -984,7 +985,7 @@ annotate_figure(
   ggarrange(p1, p2, p3, p4, p5, p6, ncol = 3, nrow = 2, heights = c(4, 1), align="hv"),
   left = text_grob("Species with significant improvement", rot = 90, size = 14, vjust = 1))
 
-ggsave("SpeciesBestRMSE_20260326.pdf", height=10, width=15)
+ggsave("SpeciesBestRMSE_20260623.pdf", height=10, width=15)
 
 
 
