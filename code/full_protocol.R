@@ -990,7 +990,7 @@ ggsave("SpeciesBestRMSE_20260623.pdf", height=10, width=15)
 
 
 ################################################################################
-# Heat map - variable importance
+# Heat map - variable importance (not a final figure)
 ################################################################################
 
 
@@ -1030,7 +1030,7 @@ ggplot(temp, aes(x = factor(species, levels = sp_order),
   ylab("Variable") +
   xlab("Species")
 
-ggsave("SHAPimportance_20260329.pdf", height=11, width=11)
+ggsave("SHAPimportance_20260623.pdf", height=11, width=11)
 
 
 ################################################################################
@@ -1084,7 +1084,7 @@ p2 <- temp %>%
   scale_fill_manual(values = c("#70A4AF", "#7C4584", "#A8BBA3", "#D97C55", "#FDC71B", "#842B3B")) +
   theme_minimal() +
   theme(legend.position = "none") +
-  xlab("Average SHAP importance (%)") +
+  xlab("SHAP importance (%)") +
   ylab("")
 
 # plot it ----------------------------------------------------------------------
@@ -1093,7 +1093,7 @@ ggarrange(p1, p2, ncol = 1, nrow = 2, heights = c(9, 1), align="hv")
 
 # save it ----------------------------------------------------------------------
 
-ggsave("SHAPimportance_20260330.png", height=12, width=12)
+ggsave("SHAPimportance_20260623.png", height=12, width=12)
 
 
 
