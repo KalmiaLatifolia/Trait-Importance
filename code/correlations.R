@@ -17,12 +17,12 @@ setwd("/Users/lauraberman/Library/CloudStorage/OneDrive-NationalUniversityofSing
 
 # load dataset -----------------------------------------------------------------
 
-siteDetections_foliarTraits_BioCube <- readRDS("data/siteDetections_foliarTraits_BioCube_20260320.rds")
+siteDetections_foliarTraits_BioCube <- readRDS("data/siteDetections_foliarTraits_BioCube_20260622.rds")
 
 # set up variable groups -------------------------------------------------------
 names(siteDetections_foliarTraits_BioCube)
 species = siteDetections_foliarTraits_BioCube[4:97]
-spatVars  = siteDetections_foliarTraits_BioCube[98:183, 190:234] # exclude modeled diversity/landcover vars
+spatVars  = siteDetections_foliarTraits_BioCube[98:228] # exclude modeled diversity/landcover vars
 
 # NFPD function ----------------------------------------------------------------
 FPD <- function(species_col) {species_col / max(species_col)}
