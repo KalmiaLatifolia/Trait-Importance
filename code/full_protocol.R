@@ -336,7 +336,7 @@ siteDetections_foliarTraits_BioCube <- merge(siteDetections_foliarTraits, BioCub
 write_rds(siteDetections_foliarTraits_BioCube, "data/siteDetections_foliarTraits_BioCube_20260313.rds")
 write_csv(siteDetections_foliarTraits_BioCube, "data/siteDetections_foliarTraits_BioCube_20260313.csv")
 
-
+# siteDetections_foliarTraits_BioCube <- readRDS("data/siteDetections_foliarTraits_BioCube_20260313.rds")
 
 ################################################################################
 # Exclude duplicate/no variance variables
@@ -760,6 +760,8 @@ temp <- subset(xgb_modelParameters, species %in% ssp)
 temp <- subset(temp, temp$varSet=="spatVars" | temp$varSet=="notTraits")
 temp$varSet[temp$varSet=="notTraits"] <- "Without Foliar Traits"
 temp$varSet[temp$varSet=="spatVars"] <- "With Foliar Traits"
+cat_improvement <- data.frame(category = "Foliar Traits", count = length(unique(temp$species)))
+  
 
 p1 <- ggplot(temp, aes(x=R2_test, y=reorder(species, R2_test), color=varSet, fill=varSet)) +
   geom_boxplot() +
@@ -777,6 +779,7 @@ temp <- subset(xgb_modelParameters, species %in% ssp)
 temp <- subset(temp, temp$varSet=="spatVars" | temp$varSet=="notStr")
 temp$varSet[temp$varSet=="notStr"] <- "Without Forest Structure"
 temp$varSet[temp$varSet=="spatVars"] <- "With Forest Structure"
+cat_improvement <- add_row(cat_improvement, category = "Canopy Structure", count = length(unique(temp$species)))
 
 p2 <- ggplot(temp, aes(x=R2_test, y=reorder(species, R2_test), color=varSet, fill=varSet)) +
   geom_boxplot() +
@@ -794,6 +797,7 @@ temp <- subset(xgb_modelParameters, species %in% ssp)
 temp <- subset(temp, temp$varSet=="spatVars" | temp$varSet=="notClim")
 temp$varSet[temp$varSet=="notClim"] <- "Without Climate"
 temp$varSet[temp$varSet=="spatVars"] <- "With Climate"
+cat_improvement <- add_row(cat_improvement, category = "Climate", count = length(unique(temp$species)))
 
 p3 <- ggplot(temp, aes(x=R2_test, y=reorder(species, R2_test), color=varSet, fill=varSet)) +
   geom_boxplot() +
@@ -811,6 +815,7 @@ temp <- subset(xgb_modelParameters, species %in% ssp)
 temp <- subset(temp, temp$varSet=="spatVars" | temp$varSet=="notPheno")
 temp$varSet[temp$varSet=="notPheno"] <- "Without Phenology"
 temp$varSet[temp$varSet=="spatVars"] <- "With Phenology"
+cat_improvement <- add_row(cat_improvement, category = "Phenology", count = length(unique(temp$species)))
 
 p4 <- ggplot(temp, aes(x=R2_test, y=reorder(species, R2_test), color=varSet, fill=varSet)) +
   geom_boxplot() +
@@ -828,6 +833,7 @@ temp <- subset(xgb_modelParameters, species %in% ssp)
 temp <- subset(temp, temp$varSet=="spatVars" | temp$varSet=="notTerr")
 temp$varSet[temp$varSet=="notTerr"] <- "Without Terrain"
 temp$varSet[temp$varSet=="spatVars"] <- "With Terrain"
+cat_improvement <- add_row(cat_improvement, category = "Terrain", count = length(unique(temp$species)))
 
 p5 <- ggplot(temp, aes(x=R2_test, y=reorder(species, R2_test), color=varSet, fill=varSet)) +
   geom_boxplot() +
@@ -844,6 +850,7 @@ temp <- subset(xgb_modelParameters, species %in% ssp)
 temp <- subset(temp, temp$varSet=="spatVars" | temp$varSet=="notDist")
 temp$varSet[temp$varSet=="notDist"] <- "Without Disturbance"
 temp$varSet[temp$varSet=="spatVars"] <- "With Disturbance"
+cat_improvement <- add_row(cat_improvement, category = "Disturbance", count = length(unique(temp$species)))
 
 p6 <- ggplot(temp, aes(x=R2_test, y=reorder(species, R2_test), color=varSet, fill=varSet)) +
   geom_boxplot() +
@@ -862,7 +869,16 @@ annotate_figure(
 ggsave("SpeciesBestR2_20260623.pdf", height=10, width=15)
 
 
-
+# alternatively, how many species have significant model improvement per category?
+ggplot(cat_improvement, aes(x=reorder(category, -count), y=count, fill=category)) +
+  geom_col() +
+  scale_fill_manual(values = c("#FDC71B", "#70A4AF", "#7C4584", "#842B3B", "#D97C55", "#A8BBA3")) +
+  theme_minimal() +
+  geom_text(aes(label=count), vjust=-0.5) +
+  ylab("Species models with significant improvement in accuracy") +
+  xlab("Variable Category") +
+  theme(legend.position = "none")
+ggsave("CategoryImprovementCounts.pdf", width=6, height=5)
 
 ################################################################################
 # which species RMSE significantly improves with each category? (Figure 3 alt)
