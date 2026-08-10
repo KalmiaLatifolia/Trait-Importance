@@ -25,11 +25,11 @@ setwd("/Users/lauraberman/Library/CloudStorage/OneDrive-NationalUniversityofSing
 
 # read full data ---------------------------------------------------------------
 
-siteDetections_foliarTraits_BioCube <- readRDS("data/siteDetections_foliarTraits_BioCube_20260320.rds")
+siteDetections_foliarTraits_BioCube <- readRDS("data/siteDetections_foliarTraits_BioCube_20260622.rds")
 
 # load tidy names --------------------------------------------------------------
 
-tidy <- read_excel("/Users/lauraberman/Library/CloudStorage/OneDrive-NationalUniversityofSingapore/Documents/Wisconsin/Townsend Lab/Trait importance/TableS1_Biocube_var_description.xlsx",
+tidy <- read_excel("/Users/lauraberman/Library/CloudStorage/OneDrive-NationalUniversityofSingapore/Documents/Wisconsin/Townsend Lab/Trait importance/Draft 2/TableS1_Biocube_var_description.xlsx",
                    range = cell_cols(1:4))
 
 # set variable groups ----------------------------------------------------------
@@ -183,6 +183,7 @@ write_csv(xgb_variableImportance, "data/xgb_variableImportance_20260325.csv")
 #xgb_variableImportance <- readRDS("data/xgb_variableImportance_20260325.rds")
 
 
+# code to generate figure 2 is in correlations.R
 
 
 
