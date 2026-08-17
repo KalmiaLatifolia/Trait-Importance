@@ -71,7 +71,8 @@ processed_data/
 
 # Outputs
 outputs/
-figures/
+figures/*
+!figures/Figure1.png
 models/
 *.rds
 *.html
