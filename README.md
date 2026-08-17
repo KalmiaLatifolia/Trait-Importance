@@ -10,7 +10,7 @@ A dataset of 129 remote sensing variables was used to predict the relative abund
 We compared the accuracy of species models with and without different predictor variables to see how those predictors improved model accuracy.
 
 
-![Protocol figure](figures/Figure1.pdf)
+![Protocol figure](figures/Figure1.png)
 
 
 # Data Availability
