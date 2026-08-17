@@ -1,18 +1,16 @@
 
 # Trait Importance
 
-This repository contains code to accompany the future manuscript tentatively titled **The predictive power of new remote sensing data for biological distributions**
-
-In its current state this is a working repository. Code is in flux and subject to change.
+This repository contains code to accompany the manuscript titled **The predictive power of new remote sensing data for biological distributions**
 
 The goal of this project is to quantify the extent to which new remote sensing data 
 like hyperspectrally derived foliar traits and GEDI lidar improve our ability to 
 model species distributions and relative abundances.
-A dataset of 140 remote sensing variables was used to predict the relative abundances of 94 bird species. 
+A dataset of 129 remote sensing variables was used to predict the relative abundances of 94 bird species. 
 We compared the accuracy of species models with and without different predictor variables to see how those predictors improved model accuracy.
 
 
-![Protocol figure](figures/Figure1_Map.png)
+![Protocol figure](figures/Figure1.pdf)
 
 
 # Data Availability
