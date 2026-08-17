@@ -60,7 +60,6 @@ rsconnect/
 .DS_Store
 
 # Data files and folders
-data/
 raw_data/
 processed_data/
 *.csv
@@ -79,6 +78,19 @@ models/
 *.rds
 *.html
 *.pdf
+
+# ------------------------------------------------------------------------------
+# Data folder: tracked so that figures can be reproduced from this repo.
+# These negations must stay BELOW the global *.csv / *.rds rules above,
+# because .gitignore uses last-match-wins. Moving them up will silently
+# untrack the data folder.
+# ------------------------------------------------------------------------------
+!data/**/*.csv
+!data/**/*.rds
+
+# Intermediate pipeline outputs, not needed to regenerate figures.
+# Also holds xgb_variableImportance_*, which exceed GitHub's 100 MiB file limit.
+data/intermediate_steps/
 
 # other
 .DS_Store
