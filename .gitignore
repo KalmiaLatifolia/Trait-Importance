@@ -71,7 +71,9 @@ processed_data/
 
 # Outputs
 outputs/
+*.png
 figures/*
+# exception: README figure must stay tracked (keep this line after the *.png rule)
 !figures/Figure1.png
 models/
 *.rds
