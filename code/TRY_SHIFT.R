@@ -18,6 +18,7 @@ setwd("/Users/lauraberman/Library/CloudStorage/OneDrive-NationalUniversityofSing
 TRYdata <- rtry_import("data/TRY_data_20251208/45681.txt")
 
 # remove BAAD data
+# full of outliers, some units issues? not trustworthy source
 TRYdata <- subset(TRYdata, TRYdata$DatasetID!=431) # BAAD data
 
 # read in SHIFT data -----------------------------------------------------------
