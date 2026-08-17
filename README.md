@@ -36,6 +36,8 @@ All relevant code is available in the 'code' folder. The scripts here start from
 publicly available raster data and show all steps of data cleaning, processing, all the way to the final
 figure visualizations.
 
+Additional code in the folder 'code/deprecated code' describes methods explored in earlier iterations of the project but not used in final analyses.
+
 
 | File Name | Description |
 |-----------|-------------|
