@@ -29,7 +29,7 @@ siteDetections_foliarTraits_BioCube <- readRDS("data/siteDetections_foliarTraits
 
 # load tidy names --------------------------------------------------------------
 
-tidy <- read_excel("/Users/lauraberman/Library/CloudStorage/OneDrive-NationalUniversityofSingapore/Documents/Wisconsin/Townsend Lab/Trait importance/Draft 2/TableS1_Biocube_var_description.xlsx",
+tidy <- read_excel("data/TableS1_Biocube_var_description.xlsx",
                    range = cell_cols(1:4))
 
 # set variable groups ----------------------------------------------------------
