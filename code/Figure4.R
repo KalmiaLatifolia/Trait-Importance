@@ -29,7 +29,7 @@ setwd("/Users/lauraberman/Library/CloudStorage/OneDrive-NationalUniversityofSing
 
 MODEL_PARAMS <- "data/xgb_modelParameters_20260622.rds"
 VAR_IMP      <- "data/xgb_variableImportance_20260622.rds"
-TABLE_S1     <- "/Users/lauraberman/Library/CloudStorage/OneDrive-NationalUniversityofSingapore/Documents/Wisconsin/Townsend Lab/Trait importance/Draft 2/TableS1_Biocube_var_description.xlsx"
+TABLE_S1     <- "data/TableS1_Biocube_var_description.xlsx"
 OUTDIR       <- "figures"
 DATESTAMP    <- format(Sys.Date(), "%Y%m%d")
 
