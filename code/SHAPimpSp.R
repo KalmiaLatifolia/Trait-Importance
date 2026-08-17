@@ -16,7 +16,7 @@ siteDetections_foliarTraits_BioCube <- readRDS("data/siteDetections_foliarTraits
 species <- colnames(siteDetections_foliarTraits_BioCube)[4:97]
 
 # load tidy names
-tidy <- read_excel("/Users/lauraberman/Library/CloudStorage/OneDrive-NationalUniversityofSingapore/Documents/Wisconsin/Townsend Lab/Trait importance/TableS1_Biocube_var_description.xlsx",
+tidy <- read_excel("data/TableS1_Biocube_var_description.xlsx",
                    range = cell_cols(1:4))
 
 # pick one species
