@@ -543,7 +543,7 @@ col_hc <- hclust(as.dist(1 - cor(spTraitCors, method = "spearman")),
 # Tidy variable labels ---------------------------------------------------------
 
 # load tidy names
-tidy <- read_excel("/Users/lauraberman/Library/CloudStorage/OneDrive-NationalUniversityofSingapore/Documents/Wisconsin/Townsend Lab/Trait importance/TableS1_Biocube_var_description.xlsx",
+tidy <- read_excel("data/TableS1_Biocube_var_description.xlsx",
                    range = cell_cols(1:4))
 
 # add variable labels to correlation dataframe 
