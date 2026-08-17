@@ -19,7 +19,7 @@ We compared the accuracy of species models with and without different predictor 
 All of the derived datasets used in this project are available within this repository inside the "data" folder.
 Most files are available in both csv and rds formats.
 
-Complete raster data of all 140 geospatial variables would never fit on GitHub, but luckily all of these are publicly available anyway. 
+Complete raster data of all 129 geospatial variables would never fit on GitHub, but luckily all of these are publicly available anyway. 
 You can check in "TableS1_Biocube_var_description" for the links to the original datasets.
 
 | File Name | Description |
@@ -43,8 +43,11 @@ figure visualizations.
 | dataProcessing.R | Just the first section of the pipeline. Data extraction, cleaning, and formatting. |
 | xgboost.R | The second section of the pipeline. Calculating relative abundance models with xgboost. |
 | correlations.R | Code to generate Figure 2 - the correlation matrix |
+| Figure3.R | Code to generate Figure 3 - paired t-tests for test R2 |
+| Figure4.R | Code to generate Figure 4 - stacked bar chart of SHAP importance |
 | TRY_SHIFT.R | Code to generate the boxplots in Figure 5 |
-
+| singleSpSHAP | Code to generate SHAP plots in Figure 5 |
+| SHAPimpSP.R | Code to generate supplemental figures |
 
 
 
